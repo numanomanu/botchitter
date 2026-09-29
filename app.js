@@ -1,5 +1,5 @@
 // =============================================================
-// hitokoto — 一人Twitter: アプリケーションロジック
+// botchitter — 一人Twitter: アプリケーションロジック
 // =============================================================
 
 let tweets = [];
@@ -50,7 +50,7 @@ function toggleTheme() {
 // -------------------------------------------------------------
 // IndexedDB & LocalStorage ハイブリッド永続化層
 // -------------------------------------------------------------
-const DB_NAME = "hitokoto_db";
+const DB_NAME = "botchitter_db";
 const DB_VERSION = 1;
 const STORE_NAME = "tweets_store";
 
@@ -788,7 +788,9 @@ async function init() {
 
   // IndexedDB に無ければ localStorage を確認（初回や既存データの移行）
   if (!loaded || !loaded.length) {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) ||
+                localStorage.getItem("hitokoto_tweets_v12") ||
+                localStorage.getItem("hitokoto_tweets_v11");
     if (raw) {
       try {
         loaded = JSON.parse(raw);

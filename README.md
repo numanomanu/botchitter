@@ -1,4 +1,4 @@
-# hitokoto — 一人Twitter
+# botchitter — 一人Twitter
 
 今を観る。点を残す。いつか線になる。
 思考のログを淡々と残し、過去の自分と対話する「一人Twitter」PWAアプリ。

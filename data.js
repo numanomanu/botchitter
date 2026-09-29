@@ -1,9 +1,9 @@
 // =============================================================
-// hitokoto — 一人Twitter: 定数および初期シードデータ
+// botchitter — 一人Twitter: 定数および初期シードデータ
 // =============================================================
 
-const STORAGE_KEY = "hitokoto_tweets_v12";
-const THEME_KEY = "hitokoto_theme_mode";
+const STORAGE_KEY = "botchitter_tweets_v1";
+const THEME_KEY = "botchitter_theme_mode";
 
 // 初期シードデータ（「今日」のポストは時間表記のみ）
 const DEFAULT_TWEETS = [

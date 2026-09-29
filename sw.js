@@ -1,8 +1,8 @@
 // =============================================================
-// hitokoto — Service Worker (オフライン動作 & 高速起動キャッシュ)
+// botchitter — Service Worker (オフライン動作 & 高速起動キャッシュ)
 // =============================================================
 
-const CACHE_NAME = "hitokoto-cache-v1";
+const CACHE_NAME = "botchitter-cache-v1";
 const ASSETS = [
   "./",
   "index.html",

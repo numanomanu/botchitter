@@ -1,6 +1,6 @@
 {
-  "name": "hitokoto — 一人Twitter",
-  "short_name": "hitokoto",
+  "name": "botchitter — 一人Twitter",
+  "short_name": "botchitter",
   "description": "今を観る。点を残す。いつか線になる。思考のログを残す一人Twitter",
   "start_url": "./",
   "scope": "./",
