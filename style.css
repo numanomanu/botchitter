@@ -1,0 +1,777 @@
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* ライトテーマ */
+  :root {
+    --bg: #F7F7F4;
+    --card: #FFFFFF;
+    --quote-bg: #EFEFEA;
+    --quote-hover: #E8E8E2;
+    --reply-bg: #F0F0EB;
+    --text-primary: #181817;
+    --text-secondary: #76766E;
+    --text-tertiary: #B4B4AC;
+    --line: #E4E4DE;
+    --header-bg: rgba(247, 247, 244, 0.92);
+    --btn-bg: #181817;
+    --btn-text: #F7F7F4;
+    --danger: #D9534F;
+    --hover-overlay: rgba(0, 0, 0, 0.03);
+    --dot-shadow: rgba(24, 24, 23, 0.08);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    
+    --font-en: "Plus Jakarta Sans", -apple-system, sans-serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  }
+
+  /* ダークテーマ */
+  [data-theme="dark"] {
+    --bg: #141413;
+    --card: #1C1C1A;
+    --quote-bg: #222220;
+    --quote-hover: #2B2B28;
+    --reply-bg: #1F1F1D;
+    --text-primary: #ECECE6;
+    --text-secondary: #94948C;
+    --text-tertiary: #5E5E58;
+    --line: #282826;
+    --header-bg: rgba(20, 20, 19, 0.92);
+    --btn-bg: #ECECE6;
+    --btn-text: #141413;
+    --danger: #FF6B6B;
+    --hover-overlay: rgba(255, 255, 255, 0.04);
+    --dot-shadow: rgba(236, 236, 230, 0.12);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141413;
+      --card: #1C1C1A;
+      --quote-bg: #222220;
+      --quote-hover: #2B2B28;
+      --reply-bg: #1F1F1D;
+      --text-primary: #ECECE6;
+      --text-secondary: #94948C;
+      --text-tertiary: #5E5E58;
+      --line: #282826;
+      --header-bg: rgba(20, 20, 19, 0.92);
+      --btn-bg: #ECECE6;
+      --btn-text: #141413;
+      --danger: #FF6B6B;
+      --hover-overlay: rgba(255, 255, 255, 0.04);
+      --dot-shadow: rgba(236, 236, 230, 0.12);
+    }
+  }
+
+  html, body {
+    height: 100%;
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  .viewport {
+    width: 100%;
+    max-width: 520px;
+    min-height: 100dvh;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding: 0 24px 80px;
+  }
+
+  /* ヘッダー */
+  header {
+    height: 56px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    background: var(--header-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 20;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn-back {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+  }
+  .btn-back.show {
+    display: flex;
+    align-items: center;
+  }
+  .btn-back svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+  }
+
+  .logo {
+    font-family: var(--font-en);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .header-date {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .theme-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, background-color 0.15s;
+  }
+  .theme-toggle-btn:hover {
+    color: var(--text-primary);
+    background: var(--hover-overlay);
+  }
+  .theme-toggle-btn svg {
+    width: 15px;
+    height: 15px;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    fill: none;
+  }
+
+  /* ---------------------------------
+     メイン画面（タイムライン表示）
+  --------------------------------- */
+  .view-timeline {
+    display: flex;
+    flex-direction: column;
+  }
+  .view-timeline.hidden {
+    display: none;
+  }
+
+  .composer {
+    padding: 16px 0 14px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 8px;
+    position: relative;
+  }
+
+  textarea.composer-textarea {
+    width: 100%;
+    min-height: 64px;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 16px;
+    line-height: 1.75;
+    color: var(--text-primary);
+    resize: none;
+    padding: 0;
+  }
+
+  textarea.composer-textarea::placeholder {
+    color: var(--text-tertiary);
+    font-size: 15px;
+  }
+
+  /* 引用中の過去メモプレビュー */
+  .quote-preview {
+    display: none;
+    position: relative;
+    background: var(--quote-bg);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 8px 0 12px;
+    border-left: 2px solid var(--text-secondary);
+    animation: slideDown 0.2s var(--ease-out);
+  }
+  .quote-preview.active {
+    display: block;
+  }
+
+  .quote-preview-header {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .btn-cancel-quote {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    padding: 2px 4px;
+  }
+  .btn-cancel-quote:hover {
+    color: var(--text-primary);
+  }
+
+  .quote-preview-body {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-primary);
+  }
+
+  .composer-bottom {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 6px;
+  }
+
+  .btn-post {
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: none;
+    border-radius: 999px;
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-post:disabled {
+    opacity: 0.15;
+    cursor: not-allowed;
+  }
+  .btn-post:not(:disabled):hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+  }
+
+  /* タイムライン */
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding-left: 18px;
+    contain: layout style;
+  }
+
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: 12px;
+    bottom: 24px;
+    width: 1px;
+    background: var(--line);
+  }
+
+  .tweet-item {
+    position: relative;
+    padding: 16px 0 20px;
+    display: flex;
+    flex-direction: column;
+    animation: fadeInTweet 0.25s var(--ease-out);
+    /* オクルージョンカリング：画面外の要素の描画・スタイル計算をスキップ */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 130px;
+    contain: layout style;
+  }
+
+  .tweet-item::before {
+    content: "";
+    position: absolute;
+    left: -18.5px;
+    top: 22px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1.5px solid var(--text-secondary);
+  }
+
+  .tweet-item.is-today::before {
+    background: var(--btn-bg);
+    border-color: var(--btn-bg);
+    box-shadow: 0 0 0 3px var(--dot-shadow);
+  }
+
+  .tweet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+  }
+
+  .tweet-date-link {
+    color: var(--text-tertiary);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .tweet-date-link:hover {
+    color: var(--text-primary);
+  }
+
+  .tweet-content {
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    cursor: pointer;
+  }
+
+  /* 引用リツイートカード（クリック可能・リンク） */
+  .quoted-card {
+    background: var(--quote-bg);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 6px 0 10px;
+    border-left: 2px solid var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+  .quoted-card:hover {
+    background: var(--quote-hover);
+    transform: translateY(-1px);
+  }
+
+  .quoted-card-header {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .quoted-card-comments-badge {
+    font-size: 10px;
+    background: var(--hover-overlay);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--text-secondary);
+  }
+
+  .quoted-card-body {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-primary);
+  }
+
+  .tweet-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 14px;
+    margin-top: 4px;
+  }
+
+  .action-btn {
+    background: none;
+    border: none;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all 0.15s;
+  }
+  .action-btn:hover {
+    color: var(--text-primary);
+    background: var(--hover-overlay);
+  }
+  .action-btn.delete-btn:hover {
+    color: var(--danger);
+  }
+  .action-btn svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    fill: none;
+  }
+
+  /* ---------------------------------
+     スレッド／コメント（インライン）
+  --------------------------------- */
+  .replies-thread {
+    margin-top: 10px;
+    padding-left: 14px;
+    border-left: 1.5px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .reply-item {
+    background: var(--reply-bg);
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: fadeInTweet 0.2s var(--ease-out);
+    content-visibility: auto;
+    contain-intrinsic-size: auto 54px;
+    contain: layout style;
+  }
+
+  .reply-meta {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .reply-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .reply-delete-btn {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s, background-color 0.15s;
+  }
+  .reply-delete-btn:hover {
+    color: var(--danger);
+    background: var(--hover-overlay);
+  }
+  .reply-delete-btn svg {
+    width: 12px;
+    height: 12px;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    fill: none;
+  }
+
+  .reply-input-box {
+    display: none;
+    margin-top: 10px;
+    padding-left: 14px;
+    border-left: 1.5px solid var(--line);
+    animation: slideDown 0.2s var(--ease-out);
+  }
+  .reply-input-box.open {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .reply-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    padding: 6px 0;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    outline: none;
+    resize: none;
+    min-height: 28px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .reply-input:focus {
+    border-bottom-color: var(--text-primary);
+  }
+
+  .btn-submit-reply {
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: none;
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  /* ---------------------------------
+     詳細画面（Tweet Detail / Thread View）
+     1つのポストを中心に、過去・コメント・未来の引用が一本の線として繋がる
+  --------------------------------- */
+  .view-detail {
+    display: none;
+    flex-direction: column;
+    padding-top: 16px;
+    animation: fadeInTweet 0.25s var(--ease-out);
+  }
+  .view-detail.active {
+    display: flex;
+  }
+
+  .detail-focus-card {
+    padding: 16px 0 24px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .detail-meta {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-bottom: 14px;
+  }
+
+  .detail-text {
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin-bottom: 16px;
+  }
+
+  .detail-section-title {
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin: 24px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* このポストを引用した未来のポストたち（線の可視化） */
+  .detail-quote-children {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .quote-child-card {
+    background: var(--quote-bg);
+    border-radius: 8px;
+    padding: 12px 14px;
+    border-left: 2px solid var(--text-primary);
+    cursor: pointer;
+    transition: background 0.15s;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 72px;
+    contain: layout style;
+  }
+  .quote-child-card:hover {
+    background: var(--quote-hover);
+  }
+
+  .quote-child-meta {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+
+  .quote-child-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-primary);
+  }
+
+  /* 削除確認ダイアログ */
+  .confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.2s var(--ease-out);
+    transform: translateZ(0);
+    will-change: opacity;
+  }
+  .confirm-overlay.open {
+    display: flex;
+    opacity: 1;
+  }
+
+  .confirm-dialog {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px 22px;
+    width: 88%;
+    max-width: 320px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
+    animation: scaleIn 0.2s var(--ease-out);
+    transform: translateZ(0);
+  }
+
+  .confirm-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .btn-confirm-cancel {
+    background: transparent;
+    border: none;
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .btn-confirm-cancel:hover {
+    color: var(--text-primary);
+    background: var(--hover-overlay);
+  }
+
+  .btn-confirm-danger {
+    background: var(--danger);
+    color: #FFFFFF;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn-confirm-danger:hover {
+    opacity: 0.88;
+  }
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeInTweet {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .reply-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .reply-action-btn {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s, background-color 0.15s;
+  }
+  .reply-action-btn:hover {
+    color: var(--text-primary);
+    background: var(--hover-overlay);
+  }
+  .reply-action-btn.delete-btn:hover {
+    color: var(--danger);
+  }
+  .reply-action-btn svg {
+    width: 12px;
+    height: 12px;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    fill: none;
+  }
+
+  /* トースト通知 */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--card);
+    color: var(--text-primary);
+    border: 1px solid var(--line);
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+    z-index: 2000;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
