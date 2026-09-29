@@ -25,6 +25,7 @@ const timelineStream = document.getElementById("timelineStream");
 const I18N = {
   ja: {
     placeholder_default: "今日、何を感じた？",
+    placeholder_comment: "コメント",
     btn_post: "残す",
     btn_cancel: "キャンセル",
     btn_delete: "削除",
@@ -35,6 +36,7 @@ const I18N = {
   },
   en: {
     placeholder_default: "What did you feel today?",
+    placeholder_comment: "Comment",
     btn_post: "Post",
     btn_cancel: "Cancel",
     btn_delete: "Delete",
@@ -817,7 +819,7 @@ function renderDetailView(tweetId) {
       <textarea
         id="detail-reply-input"
         class="detail-composer-textarea"
-        placeholder="${t('placeholder_default')}"
+        placeholder="${t('placeholder_comment')}"
         rows="2"
         oninput="handleDetailReplyInput(this)"
         onkeydown="handleDetailKeydown(event, '${tweet.id}')"
