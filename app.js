@@ -512,7 +512,12 @@ function autoResizeTextarea(el) {
   if (!el) return;
   window.requestAnimationFrame(() => {
     el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, 160) + "px";
+    if (el.classList.contains("reply-input")) {
+      el.style.height = Math.min(el.scrollHeight, 180) + "px";
+    } else {
+      // メイン投稿欄・詳細コメント欄は文章量に合わせて自然に欄が広がり、内部スクロールを作らない
+      el.style.height = el.scrollHeight + "px";
+    }
   });
 }
 

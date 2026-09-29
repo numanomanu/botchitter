@@ -223,6 +223,7 @@
     color: var(--text-primary);
     resize: none;
     padding: 0;
+    overflow-y: hidden;
   }
 
   textarea.composer-textarea::placeholder {
@@ -641,6 +642,7 @@
     resize: none;
     padding: 0;
     box-sizing: border-box;
+    overflow-y: hidden;
   }
 
   .detail-composer-textarea::placeholder {
