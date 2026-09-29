@@ -19,6 +19,119 @@ const quotePreviewText = document.getElementById("quotePreviewText");
 const timelineStream = document.getElementById("timelineStream");
 
 // -------------------------------------------------------------
+// 多言語対応（i18n & ブラウザ言語自動判定）
+// -------------------------------------------------------------
+const I18N = {
+  ja: {
+    placeholder_default: "今日、何を感じた？",
+    placeholder_quote_tweet: "今のあなたから見ると、これは何に見える？",
+    placeholder_quote_reply: "このコメントを見て、今思うことは？",
+    placeholder_reply: "コメントを追加…",
+    btn_post: "残す",
+    btn_reply: "送信",
+    btn_cancel: "キャンセル",
+    btn_delete: "削除する",
+    quote_prefix_tweet: (date) => `${date} を引用`,
+    quote_prefix_reply: (date) => `${date} のコメントを引用`,
+    quote_label_default: "引用中",
+    quoted_comments_count: (n) => `💬 ${n}件のコメント`,
+    detail_quotes_title: "この記録を引用したポスト",
+    detail_comments_title: (n) => `コメント (${n})`,
+    detail_open_quoted: "引用元を開く →",
+    detail_not_found: "記録が見つかりません。",
+    detail_back_home: "一覧に戻る",
+    confirm_delete_tweet: "この記録を削除しますか？",
+    confirm_delete_reply: "このコメントを削除しますか？",
+    toast_copied_tweet: "内容をクリップボードにコピーしました",
+    toast_copied_reply: "コメントをコピーしました",
+    action_comment: "コメント",
+    action_quote: "引用",
+    action_share: "シェア",
+    action_delete: "削除",
+    back_title: "タイムラインに戻る",
+    theme_light_title: "ライトモードに切り替え",
+    theme_dark_title: "ダークモードに切り替え",
+    clear_quote_title: "引用を解除",
+    quoted_card_title: "元の記録とコメントを見る"
+  },
+  en: {
+    placeholder_default: "What did you feel today?",
+    placeholder_quote_tweet: "Looking back from now, what do you see?",
+    placeholder_quote_reply: "Reflecting on this comment, what comes to mind?",
+    placeholder_reply: "Add a comment...",
+    btn_post: "Post",
+    btn_reply: "Reply",
+    btn_cancel: "Cancel",
+    btn_delete: "Delete",
+    quote_prefix_tweet: (date) => `Quoting ${date}`,
+    quote_prefix_reply: (date) => `Quoting comment from ${date}`,
+    quote_label_default: "Quoting",
+    quoted_comments_count: (n) => `💬 ${n} ${n === 1 ? 'comment' : 'comments'}`,
+    detail_quotes_title: "Quotes of this post",
+    detail_comments_title: (n) => `Comments (${n})`,
+    detail_open_quoted: "View original →",
+    detail_not_found: "Post not found.",
+    detail_back_home: "Back to timeline",
+    confirm_delete_tweet: "Delete this post?",
+    confirm_delete_reply: "Delete this comment?",
+    toast_copied_tweet: "Copied to clipboard",
+    toast_copied_reply: "Comment copied to clipboard",
+    action_comment: "Comment",
+    action_quote: "Quote",
+    action_share: "Share",
+    action_delete: "Delete",
+    back_title: "Back to timeline",
+    theme_light_title: "Switch to light mode",
+    theme_dark_title: "Switch to dark mode",
+    clear_quote_title: "Cancel quote",
+    quoted_card_title: "View original post and comments"
+  }
+};
+
+function getLocale() {
+  const navLang = (navigator.language || (navigator.languages && navigator.languages[0]) || "").toLowerCase();
+  return navLang.startsWith("ja") ? "ja" : "en";
+}
+
+function t(key, ...args) {
+  const locale = getLocale();
+  const dict = I18N[locale] || I18N.en;
+  const val = dict[key] !== undefined ? dict[key] : (I18N.ja[key] || "");
+  if (typeof val === "function") {
+    return val(...args);
+  }
+  return val;
+}
+
+function applyTranslations() {
+  const locale = getLocale();
+  document.documentElement.setAttribute("lang", locale);
+
+  if (composerInput && !currentQuoteTarget) {
+    composerInput.placeholder = t("placeholder_default");
+  }
+  if (postBtn) {
+    postBtn.textContent = t("btn_post");
+  }
+  const btnCancelQuote = document.querySelector(".btn-cancel-quote");
+  if (btnCancelQuote) {
+    btnCancelQuote.title = t("clear_quote_title");
+  }
+  const btnBack = document.getElementById("btnBack");
+  if (btnBack) {
+    btnBack.title = t("back_title");
+  }
+  const btnConfirmCancel = document.getElementById("btnConfirmCancel");
+  if (btnConfirmCancel) {
+    btnConfirmCancel.textContent = t("btn_cancel");
+  }
+  const btnConfirmDelete = document.getElementById("btnConfirmDelete");
+  if (btnConfirmDelete) {
+    btnConfirmDelete.textContent = t("btn_delete");
+  }
+}
+
+// -------------------------------------------------------------
 // テーマ管理（ライト／ダーク／OS連動）
 // -------------------------------------------------------------
 function initTheme() {
@@ -35,10 +148,10 @@ function applyTheme(theme) {
   if (!btn) return;
   if (theme === "dark") {
     btn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
-    btn.setAttribute("title", "ライトモードに切り替え");
+    btn.setAttribute("title", t("theme_light_title"));
   } else {
     btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-    btn.setAttribute("title", "ダークモードに切り替え");
+    btn.setAttribute("title", t("theme_dark_title"));
   }
 }
 
@@ -126,8 +239,16 @@ function save() {
 
 function renderTodayDate() {
   const now = new Date();
-  const options = { month: "long", day: "numeric", weekday: "short" };
-  document.getElementById("todayDateLabel").textContent = new Intl.DateTimeFormat("ja-JP", options).format(now);
+  const locale = getLocale();
+  const dateEl = document.getElementById("todayDateLabel");
+  if (!dateEl) return;
+  if (locale === "ja") {
+    const options = { month: "long", day: "numeric", weekday: "short" };
+    dateEl.textContent = new Intl.DateTimeFormat("ja-JP", options).format(now);
+  } else {
+    const options = { weekday: "short", month: "short", day: "numeric" };
+    dateEl.textContent = new Intl.DateTimeFormat("en-US", options).format(now);
+  }
 }
 
 // 時刻文字列（例: 20:30）
@@ -202,7 +323,7 @@ function quoteTweet(tweetId) {
     isReply: false
   };
 
-  quotePreviewLabel.textContent = `${displayDate} を引用`;
+  quotePreviewLabel.textContent = t("quote_prefix_tweet", displayDate);
   quotePreviewText.textContent = target.text;
   quotePreview.classList.add("active");
 
@@ -212,7 +333,7 @@ function quoteTweet(tweetId) {
 
   window.scrollTo({ top: 0, behavior: "smooth" });
   composerInput.focus();
-  composerInput.placeholder = "今のあなたから見ると、これは何に見える？";
+  composerInput.placeholder = t("placeholder_quote_tweet");
   handleInput();
 }
 
@@ -228,12 +349,12 @@ function quoteReply(tweetId, replyId, event) {
   currentQuoteTarget = {
     id: targetTweet.id, // 親ポストへジャンプできるようにIDを保持
     replyId: targetReply.id,
-    dateLabel: `${replyDate} のコメント`,
+    dateLabel: t("quote_prefix_reply", replyDate),
     text: targetReply.text,
     isReply: true
   };
 
-  quotePreviewLabel.textContent = `${replyDate} のコメントを引用`;
+  quotePreviewLabel.textContent = t("quote_prefix_reply", replyDate);
   quotePreviewText.textContent = targetReply.text;
   quotePreview.classList.add("active");
 
@@ -243,14 +364,14 @@ function quoteReply(tweetId, replyId, event) {
 
   window.scrollTo({ top: 0, behavior: "smooth" });
   composerInput.focus();
-  composerInput.placeholder = "このコメントを見て、今思うことは？";
+  composerInput.placeholder = t("placeholder_quote_reply");
   handleInput();
 }
 
 function clearQuote() {
   currentQuoteTarget = null;
   quotePreview.classList.remove("active");
-  composerInput.placeholder = "今日、何が見えた？";
+  composerInput.placeholder = t("placeholder_default");
   handleInput();
 }
 
@@ -362,10 +483,10 @@ function addReply(tweetId, inputElementId) {
     thread.insertAdjacentHTML("beforeend", buildReplyItemHtml(newReply, tweetId));
   }
 
-  // ボタンのカウント表記更新
+  // ボタンのカウント表記更新（数字のみ表示、0件時は非表示）
   const countLabel = document.getElementById(`reply-btn-label-${tweetId}`);
   if (countLabel) {
-    countLabel.textContent = `コメント (${targetTweet.replies.length})`;
+    countLabel.textContent = targetTweet.replies.length > 0 ? targetTweet.replies.length : "";
   }
 
   // 入力ボックスを閉じる
@@ -407,7 +528,7 @@ window.addEventListener("keydown", (e) => {
 // コメント削除（対象要素のみDOMから即時削除）
 function deleteReply(tweetId, replyId, event) {
   if (event) event.stopPropagation();
-  askConfirmation("このコメントを削除しますか？", () => {
+  askConfirmation(t("confirm_delete_reply"), () => {
     const targetTweet = tweets.find(t => t.id === tweetId);
     if (!targetTweet || !targetTweet.replies) return;
 
@@ -429,7 +550,7 @@ function deleteReply(tweetId, replyId, event) {
 
       const countLabel = document.getElementById(`reply-btn-label-${tweetId}`);
       if (countLabel) {
-        countLabel.textContent = `コメント${targetTweet.replies.length > 0 ? ` (${targetTweet.replies.length})` : ''}`;
+        countLabel.textContent = targetTweet.replies.length > 0 ? targetTweet.replies.length : "";
       }
     }
   });
@@ -438,7 +559,7 @@ function deleteReply(tweetId, replyId, event) {
 // ポスト削除（DOMノードを差分削除）
 function deleteTweet(tweetId, event) {
   if (event) event.stopPropagation();
-  askConfirmation("この記録を削除しますか？", () => {
+  askConfirmation(t("confirm_delete_tweet"), () => {
     tweets = tweets.filter(t => t.id !== tweetId);
     save();
     if (window.location.hash === `#tweet-${tweetId}`) {
@@ -503,7 +624,7 @@ async function shareTweet(tweetId, event) {
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(shareText);
-      showToast("内容をクリップボードにコピーしました");
+      showToast(t("toast_copied_tweet"));
       return;
     }
   } catch (clipErr) {
@@ -537,7 +658,7 @@ async function shareReply(tweetId, replyId, event) {
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(shareText);
-      showToast("コメントをコピーしました");
+      showToast(t("toast_copied_reply"));
       return;
     }
   } catch (clipErr) {}
@@ -556,13 +677,13 @@ function buildReplyItemHtml(rep, tweetId) {
       <div class="reply-meta">
         <span>${displayDate}</span>
         <div class="reply-actions">
-          <button class="reply-action-btn" onclick="shareReply('${tweetId}', '${rep.id}', event)" title="このコメントをシェア">
+          <button class="reply-action-btn" onclick="shareReply('${tweetId}', '${rep.id}', event)" title="${t('action_share')}">
             <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
           </button>
-          <button class="reply-action-btn" onclick="quoteReply('${tweetId}', '${rep.id}', event)" title="このコメントを引用">
+          <button class="reply-action-btn" onclick="quoteReply('${tweetId}', '${rep.id}', event)" title="${t('action_quote')}">
             <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
           </button>
-          <button class="reply-action-btn delete-btn" onclick="deleteReply('${tweetId}', '${rep.id}', event)" title="削除">
+          <button class="reply-action-btn delete-btn" onclick="deleteReply('${tweetId}', '${rep.id}', event)" title="${t('action_delete')}">
             <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
         </div>
@@ -601,10 +722,10 @@ function buildTweetItemHtml(tweet) {
 
       <!-- 引用カード（クリックで引用元ポストの詳細へジャンプ） -->
       ${tweet.quoted ? `
-        <div class="quoted-card" onclick="${tweet.targetQuoteId ? `goToTweet('${tweet.targetQuoteId}')` : ''}" title="元の記録とコメントを見る">
+        <div class="quoted-card" onclick="${tweet.targetQuoteId ? `goToTweet('${tweet.targetQuoteId}')` : ''}" title="${t('quoted_card_title')}">
           <div class="quoted-card-header">
             <span>${escapeHtml(getDisplayDateLabel(tweet.quoted.dateLabel))}</span>
-            ${quotedRepliesCount > 0 ? `<span class="quoted-card-comments-badge">💬 ${quotedRepliesCount}件のコメント</span>` : ''}
+            ${quotedRepliesCount > 0 ? `<span class="quoted-card-comments-badge">${t('quoted_comments_count', quotedRepliesCount)}</span>` : ''}
           </div>
           <div class="quoted-card-body">${escapeHtml(tweet.quoted.text)}</div>
         </div>
@@ -618,45 +739,43 @@ function buildTweetItemHtml(tweet) {
         <textarea
           id="reply-input-${tweet.id}"
           class="reply-input"
-          placeholder="コメントを追加…"
+          placeholder="${t('placeholder_reply')}"
           rows="1"
           oninput="autoResizeTextarea(this)"
           onkeydown="handleReplyKeydown(event, '${tweet.id}')"
         ></textarea>
-        <button class="btn-submit-reply" onclick="addReply('${tweet.id}')">送信</button>
+        <button class="btn-submit-reply" onclick="addReply('${tweet.id}')">${t('btn_reply')}</button>
       </div>
 
-      <!-- アクション -->
+      <!-- アクション（アイコン＋件数数字のみの極めてクリーンなUI） -->
       <div class="tweet-footer">
-        <button class="action-btn delete-btn" onclick="deleteTweet('${tweet.id}', event)" title="削除">
-          <svg viewBox="0 0 24 24">
-            <path d="M3 6h18"/>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
-            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-          </svg>
-        </button>
-        <button class="action-btn" onclick="toggleReplyBox('${tweet.id}')" title="コメントする">
+        <button class="action-btn" onclick="toggleReplyBox('${tweet.id}')" title="${t('action_comment')}">
           <svg viewBox="0 0 24 24">
             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
           </svg>
-          <span id="reply-btn-label-${tweet.id}">コメント${repliesList.length > 0 ? ` (${repliesList.length})` : ''}</span>
+          <span class="action-count" id="reply-btn-label-${tweet.id}">${repliesList.length > 0 ? repliesList.length : ''}</span>
         </button>
-        <button class="action-btn" onclick="quoteTweet('${tweet.id}')" title="引用して最新コメントを投稿">
+        <button class="action-btn" onclick="quoteTweet('${tweet.id}')" title="${t('action_quote')}">
           <svg viewBox="0 0 24 24">
             <path d="M17 1l4 4-4 4"/>
             <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
             <path d="M7 23l-4-4 4-4"/>
             <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
           </svg>
-          <span>引用</span>
         </button>
-        <button class="action-btn" onclick="shareTweet('${tweet.id}', event)" title="内容をシェア">
+        <button class="action-btn" onclick="shareTweet('${tweet.id}', event)" title="${t('action_share')}">
           <svg viewBox="0 0 24 24">
             <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
             <polyline points="16 6 12 2 8 6"/>
             <line x1="12" y1="2" x2="12" y2="15"/>
           </svg>
-          <span>シェア</span>
+        </button>
+        <button class="action-btn delete-btn" onclick="deleteTweet('${tweet.id}', event)" title="${t('action_delete')}">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 6h18"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
         </button>
       </div>
     </article>
@@ -681,7 +800,7 @@ function renderDetailView(tweetId) {
   const tweet = tweets.find(t => t.id === tweetId);
 
   if (!tweet) {
-    detailContainer.innerHTML = `<div style="padding:40px 0; color:var(--text-tertiary);">記録が見つかりません。<a href="#" onclick="goHome()">一覧に戻る</a></div>`;
+    detailContainer.innerHTML = `<div style="padding:40px 0; color:var(--text-tertiary);">${t('detail_not_found')} <a href="#" onclick="goHome()">${t('detail_back_home')}</a></div>`;
     return;
   }
 
@@ -697,7 +816,7 @@ function renderDetailView(tweetId) {
   ` : "";
 
   const quotesHtml = quotingPosts.length > 0 ? `
-    <div class="detail-section-title">この記録を引用したポスト</div>
+    <div class="detail-section-title">${t('detail_quotes_title')}</div>
     <div class="detail-quote-children">
       ${quotingPosts.map(qp => `
         <div class="quote-child-card" onclick="goToTweet('${qp.id}')">
@@ -718,33 +837,31 @@ function renderDetailView(tweetId) {
         <div class="quoted-card" onclick="${tweet.targetQuoteId ? `goToTweet('${tweet.targetQuoteId}')` : ''}" style="margin-bottom: 16px;">
           <div class="quoted-card-header">
             <span>${escapeHtml(getDisplayDateLabel(tweet.quoted.dateLabel))}</span>
-            <span style="font-size:10px; color:var(--text-secondary);">引用元を開く →</span>
+            <span style="font-size:10px; color:var(--text-secondary);">${t('detail_open_quoted')}</span>
           </div>
           <div class="quoted-card-body">${escapeHtml(tweet.quoted.text)}</div>
         </div>
       ` : ''}
 
       <div class="tweet-footer" style="margin-top: 10px;">
-        <button class="action-btn delete-btn" onclick="deleteTweet('${tweet.id}', event)" title="削除">
-          <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-        </button>
-        <button class="action-btn" onclick="quoteTweet('${tweet.id}')" title="引用して最新コメントを投稿">
+        <button class="action-btn" onclick="quoteTweet('${tweet.id}')" title="${t('action_quote')}">
           <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-          <span>引用</span>
         </button>
-        <button class="action-btn" onclick="shareTweet('${tweet.id}', event)" title="内容をシェア">
+        <button class="action-btn" onclick="shareTweet('${tweet.id}', event)" title="${t('action_share')}">
           <svg viewBox="0 0 24 24">
             <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
             <polyline points="16 6 12 2 8 6"/>
             <line x1="12" y1="2" x2="12" y2="15"/>
           </svg>
-          <span>シェア</span>
+        </button>
+        <button class="action-btn delete-btn" onclick="deleteTweet('${tweet.id}', event)" title="${t('action_delete')}">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
         </button>
       </div>
     </article>
 
     <!-- コメント一覧 -->
-    <div class="detail-section-title">コメント (${repliesList.length})</div>
+    <div class="detail-section-title">${t('detail_comments_title', repliesList.length)}</div>
     ${repliesHtml}
 
     <!-- コメント追加入力欄 -->
@@ -752,12 +869,12 @@ function renderDetailView(tweetId) {
       <textarea
         id="detail-reply-input"
         class="reply-input"
-        placeholder="コメントを追加…"
+        placeholder="${t('placeholder_reply')}"
         rows="1"
         oninput="autoResizeTextarea(this)"
         onkeydown="handleReplyKeydown(event, '${tweet.id}', 'detail-reply-input')"
       ></textarea>
-      <button class="btn-submit-reply" onclick="addReply('${tweet.id}', 'detail-reply-input')">送信</button>
+      <button class="btn-submit-reply" onclick="addReply('${tweet.id}', 'detail-reply-input')">${t('btn_reply')}</button>
     </div>
 
     <!-- 未来へのつながり（このポストを引用したポストたち） -->
@@ -778,6 +895,7 @@ function escapeHtml(str) {
 // 初期ロード（IndexedDB -> localStorage -> DEFAULT_TWEETS の順で優先読み込み）
 async function init() {
   initTheme();
+  applyTranslations();
 
   let loaded = null;
   try {
@@ -801,11 +919,11 @@ async function init() {
     }
   }
 
-  // どちらにもデータが無ければ初期シードデータを採用
+  // どちらにもデータが無ければブラウザ言語に合わせた初期シードデータを採用
   if (loaded && loaded.length) {
     tweets = loaded;
   } else {
-    tweets = JSON.parse(JSON.stringify(DEFAULT_TWEETS));
+    tweets = JSON.parse(JSON.stringify(getDefaultTweets(getLocale())));
     save();
   }
 

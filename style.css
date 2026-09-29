@@ -412,15 +412,20 @@
   .action-btn {
     background: none;
     border: none;
-    font-size: 12px;
-    color: var(--text-secondary);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-tertiary);
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 4px;
-    padding: 4px 6px;
-    border-radius: 4px;
-    transition: all 0.15s;
+    padding: 5px 6px;
+    border-radius: 999px;
+    transition: color 0.15s, background-color 0.15s;
+    min-width: 28px;
+    height: 28px;
+    box-sizing: border-box;
   }
   .action-btn:hover {
     color: var(--text-primary);
@@ -430,11 +435,20 @@
     color: var(--danger);
   }
   .action-btn svg {
-    width: 14px;
-    height: 14px;
+    width: 15px;
+    height: 15px;
     stroke: currentColor;
-    stroke-width: 1.7;
+    stroke-width: 1.75;
     fill: none;
+  }
+
+  .action-count {
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .action-count:empty {
+    display: none;
   }
 
   /* ---------------------------------

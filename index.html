@@ -50,7 +50,7 @@
       <textarea
         id="composerInput"
         class="composer-textarea"
-        placeholder="今日、何が見えた？"
+        placeholder="今日、何を感じた？"
         rows="2"
         oninput="handleInput()"
       ></textarea>
@@ -90,7 +90,7 @@
     <div class="confirm-dialog" onclick="event.stopPropagation()">
       <div class="confirm-title" id="confirmTitle">この記録を削除しますか？</div>
       <div class="confirm-actions">
-        <button class="btn-confirm-cancel" onclick="closeConfirm()">キャンセル</button>
+        <button class="btn-confirm-cancel" id="btnConfirmCancel" onclick="closeConfirm()">キャンセル</button>
         <button class="btn-confirm-danger" id="btnConfirmDelete">削除する</button>
       </div>
     </div>
