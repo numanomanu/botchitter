@@ -66,6 +66,10 @@
     }
   }
 
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   html, body {
     height: 100%;
     background-color: var(--bg);
@@ -205,10 +209,24 @@
   }
 
   .composer {
-    padding: 16px 0 14px;
+    padding: 16px 0 14px 18px;
     border-bottom: 1px solid var(--line);
     margin-bottom: 8px;
     position: relative;
+    box-sizing: border-box;
+  }
+
+  .composer::before {
+    content: "";
+    position: absolute;
+    left: -0.5px;
+    top: 24px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1.5px solid var(--text-tertiary);
+    opacity: 0.5;
   }
 
   textarea.composer-textarea {
@@ -223,11 +241,12 @@
     color: var(--text-primary);
     resize: none;
     padding: 0;
+    box-sizing: border-box;
   }
 
   textarea.composer-textarea::placeholder {
     color: var(--text-tertiary);
-    font-size: 15px;
+    font-size: 16px;
   }
 
   /* 引用中の過去メモプレビュー */
@@ -329,7 +348,7 @@
     content: "";
     position: absolute;
     left: 2px;
-    top: 12px;
+    top: 0;
     bottom: 24px;
     width: 1px;
     background: var(--line);
@@ -579,34 +598,37 @@
   .reply-input-box {
     display: none;
     margin-top: 10px;
-    padding-left: 14px;
-    border-left: 1.5px solid var(--line);
     animation: slideDown 0.2s var(--ease-out);
   }
   .reply-input-box.open {
     display: flex;
     gap: 8px;
-    align-items: flex-end;
+    align-items: center;
+    background: var(--reply-bg);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 5px 8px 5px 14px;
   }
 
   .reply-input {
     flex: 1;
     background: transparent;
     border: none;
-    border-bottom: 1px solid var(--line);
-    padding: 6px 0;
+    padding: 4px 0;
     font-family: inherit;
-    font-size: 13px;
-    line-height: 1.6;
+    font-size: 16px; /* 16pxでiPhoneの自動ズームを完全防止 */
+    line-height: 1.45;
     color: var(--text-primary);
     outline: none;
     resize: none;
-    min-height: 28px;
-    max-height: 160px;
+    min-height: 24px;
+    max-height: 120px;
     overflow-y: auto;
+    box-sizing: border-box;
   }
-  .reply-input:focus {
-    border-bottom-color: var(--text-primary);
+  .reply-input::placeholder {
+    color: var(--text-tertiary);
+    font-size: 16px;
   }
 
   .btn-submit-reply {
@@ -614,8 +636,9 @@
     color: var(--btn-text);
     border: none;
     border-radius: 999px;
-    width: 26px;
-    height: 26px;
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -630,8 +653,8 @@
     transform: scale(1.05);
   }
   .btn-submit-reply svg {
-    width: 13px;
-    height: 13px;
+    width: 14px;
+    height: 14px;
     stroke: currentColor;
     stroke-width: 2.2;
     fill: none;
@@ -652,10 +675,45 @@
   }
 
   .detail-focus-card {
-    padding: 16px 0 24px;
+    padding: 16px 0 20px;
     border-bottom: 1px solid var(--line);
     display: flex;
     flex-direction: column;
+  }
+
+  /* 詳細画面のコメント投稿フォーム（通常の投稿同様に快適に入力可能） */
+  .detail-composer {
+    padding: 16px 0 16px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 18px;
+    position: relative;
+  }
+
+  .detail-composer-textarea {
+    width: 100%;
+    min-height: 56px;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 16px; /* 16pxでiPhoneの自動ズームを完全防止 */
+    line-height: 1.65;
+    color: var(--text-primary);
+    resize: none;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .detail-composer-textarea::placeholder {
+    color: var(--text-tertiary);
+    font-size: 16px;
+  }
+
+  .detail-composer-bottom {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 8px;
   }
 
   .detail-meta {

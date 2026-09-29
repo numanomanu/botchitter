@@ -372,6 +372,24 @@ function handleReplyKeydown(event, tweetId, inputElementId) {
   }
 }
 
+function handleDetailReplyInput(el) {
+  autoResizeTextarea(el);
+  const btn = document.getElementById("detailPostBtn");
+  if (btn) {
+    btn.disabled = !el.value.trim();
+  }
+}
+
+function handleDetailKeydown(event, tweetId) {
+  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+    event.preventDefault();
+    const input = document.getElementById("detail-reply-input");
+    if (input && input.value.trim()) {
+      addReply(tweetId, "detail-reply-input");
+    }
+  }
+}
+
 // コメント入力欄のトグル
 function toggleReplyBox(tweetId) {
   const box = document.getElementById(`reply-box-${tweetId}`);
@@ -794,6 +812,29 @@ function renderDetailView(tweetId) {
       </div>
     </article>
 
+    <!-- 詳細画面のコメント投稿フォーム（通常の投稿同様に快適に書けるエリア） -->
+    <section class="detail-composer">
+      <textarea
+        id="detail-reply-input"
+        class="detail-composer-textarea"
+        placeholder="${t('placeholder_default')}"
+        rows="2"
+        oninput="handleDetailReplyInput(this)"
+        onkeydown="handleDetailKeydown(event, '${tweet.id}')"
+      ></textarea>
+      <div class="detail-composer-bottom">
+        <button
+          id="detailPostBtn"
+          class="btn-post"
+          disabled
+          onclick="addReply('${tweet.id}', 'detail-reply-input')"
+        >
+          ${t('btn_post')}
+        </button>
+      </div>
+    </section>
+
+    <!-- コメントスレッド一覧 -->
     ${repliesList.length > 0 ? `
       <div class="detail-section-title">
         <svg viewBox="0 0 24 24" class="section-title-icon"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
@@ -801,21 +842,6 @@ function renderDetailView(tweetId) {
       </div>
       ${repliesHtml}
     ` : ""}
-
-    <!-- コメント入力 -->
-    <div style="display:flex; gap:8px; align-items:flex-end; margin-bottom: 28px;">
-      <textarea
-        id="detail-reply-input"
-        class="reply-input"
-        placeholder="…"
-        rows="1"
-        oninput="autoResizeTextarea(this)"
-        onkeydown="handleReplyKeydown(event, '${tweet.id}', 'detail-reply-input')"
-      ></textarea>
-      <button class="btn-submit-reply" onclick="addReply('${tweet.id}', 'detail-reply-input')" aria-label="Send">
-        <svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-      </button>
-    </div>
 
     ${quotesHtml}
   `;
