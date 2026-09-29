@@ -502,23 +502,115 @@ function publishTweet() {
   requestPersistentStorage();
 
   composerInput.value = "";
-  composerInput.style.height = "auto";
+  composerInput.style.height = "";
   clearComposerDraft();
   clearQuote();
   refresh(`tw-${now}`);
 }
 
+// -------------------------------------------------------------
+// 高度なテキストエリア自動伸縮（リフロー・スクロール跳ね上がり完全防止）
+// -------------------------------------------------------------
+let resizeMirror = null;
+
+function getResizeMirror(targetEl) {
+  if (!resizeMirror) {
+    resizeMirror = document.createElement("div");
+    resizeMirror.setAttribute("aria-hidden", "true");
+    resizeMirror.style.cssText = `
+      position: fixed;
+      top: -9999px;
+      left: -9999px;
+      visibility: hidden;
+      pointer-events: none;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      box-sizing: border-box;
+      z-index: -9999;
+    `;
+    document.body.appendChild(resizeMirror);
+  }
+  const style = window.getComputedStyle(targetEl);
+  const paddingLeft = parseFloat(style.paddingLeft) || 0;
+  const paddingRight = parseFloat(style.paddingRight) || 0;
+  const innerWidth = targetEl.clientWidth - paddingLeft - paddingRight;
+  resizeMirror.style.width = Math.max(innerWidth, 20) + "px";
+  resizeMirror.style.fontFamily = style.fontFamily;
+  resizeMirror.style.fontSize = style.fontSize;
+  resizeMirror.style.fontWeight = style.fontWeight;
+  resizeMirror.style.lineHeight = style.lineHeight;
+  resizeMirror.style.letterSpacing = style.letterSpacing;
+  resizeMirror.style.padding = "0px";
+  resizeMirror.style.border = "none";
+  return resizeMirror;
+}
+
+function calculateTargetHeight(el, minHeight) {
+  if (!el) return minHeight;
+  if (el.clientWidth === 0) return Math.max(minHeight, el.scrollHeight || 0);
+
+  const mirror = getResizeMirror(el);
+  const text = el.value || "";
+  mirror.textContent = text.endsWith("\n") ? text + " " : (text || " ");
+  const style = window.getComputedStyle(el);
+  const paddingTop = parseFloat(style.paddingTop) || 0;
+  const paddingBottom = parseFloat(style.paddingBottom) || 0;
+  const borderTop = parseFloat(style.borderTopWidth) || 0;
+  const borderBottom = parseFloat(style.borderBottomWidth) || 0;
+  const totalHeight = mirror.offsetHeight + paddingTop + paddingBottom + borderTop + borderBottom;
+  return Math.max(minHeight, totalHeight);
+}
+
+function getCaretOffsetY(el) {
+  if (!el) return 0;
+  const sel = el.selectionStart ?? el.value.length;
+  const textUpToCaret = el.value.slice(0, sel);
+  const mirror = getResizeMirror(el);
+  mirror.textContent = textUpToCaret.endsWith("\n") ? textUpToCaret + " " : (textUpToCaret || " ");
+  return mirror.offsetHeight;
+}
+
+function keepCaretVisible(el) {
+  if (document.activeElement !== el) return;
+  const vp = window.visualViewport;
+  const viewportHeight = vp ? vp.height : window.innerHeight;
+  const rect = el.getBoundingClientRect();
+  const caretY = rect.top + getCaretOffsetY(el);
+
+  // キーボードの上端（または画面下端）から48pxの余裕を持たせる
+  const bottomThreshold = viewportHeight - 48;
+  const topThreshold = 64;
+
+  if (caretY > bottomThreshold) {
+    const diff = caretY - bottomThreshold;
+    window.scrollBy({ top: diff, behavior: "smooth" });
+  } else if (caretY < topThreshold) {
+    const diff = caretY - topThreshold;
+    window.scrollBy({ top: diff, behavior: "smooth" });
+  }
+}
+
 function autoResizeTextarea(el) {
   if (!el) return;
-  window.requestAnimationFrame(() => {
-    el.style.height = "auto";
-    if (el.classList.contains("reply-input")) {
-      el.style.height = Math.min(el.scrollHeight, 180) + "px";
-    } else {
-      // メイン投稿欄・詳細コメント欄は文章量に合わせて自然に欄が広がり、内部スクロールを作らない
-      el.style.height = el.scrollHeight + "px";
-    }
-  });
+  const isReply = el.classList.contains("reply-input");
+  const isDetail = el.classList.contains("detail-composer-textarea");
+  const minHeight = isReply ? 36 : (isDetail ? 56 : 64);
+
+  const targetHeight = calculateTargetHeight(el, minHeight);
+
+  if (isReply) {
+    el.style.height = Math.min(targetHeight, 180) + "px";
+    return;
+  }
+
+  // 高さを "auto" に落とさず直接目標値へ移行することで、スクロール位置の跳ね上がりを完全に防ぐ
+  const currentHeight = parseInt(el.style.height, 10);
+  if (currentHeight !== targetHeight) {
+    el.style.height = targetHeight + "px";
+  }
+
+  keepCaretVisible(el);
 }
 
 function handleDetailReplyInput(el, tweetId) {
@@ -845,6 +937,13 @@ function renderDetailView(tweetId) {
 
   const detailInput = $("detail-reply-input");
   if (detailInput) {
+    detailInput.addEventListener("focus", () => {
+      document.body.classList.add("keyboard-open");
+      setTimeout(() => keepCaretVisible(detailInput), 300);
+    });
+    detailInput.addEventListener("blur", () => {
+      document.body.classList.remove("keyboard-open");
+    });
     try {
       const saved = localStorage.getItem(REPLY_DRAFT_PREFIX + id);
       if (saved) {
@@ -863,6 +962,14 @@ async function init() {
   applyTranslations();
   renderTodayDate();
   initInstallHint();
+
+  composerInput.addEventListener("focus", () => {
+    document.body.classList.add("keyboard-open");
+    setTimeout(() => keepCaretVisible(composerInput), 300);
+  });
+  composerInput.addEventListener("blur", () => {
+    document.body.classList.remove("keyboard-open");
+  });
 
   // 何も保存されていない初回だけ案内用ポストを入れる（全部消した後の [] では復活させない）
   const stored = await loadTweets();

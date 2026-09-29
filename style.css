@@ -83,6 +83,13 @@
     font-size: 16px !important;
   }
 
+  /* iPhone等でキーボード表示中、入力位置がキーボードの後ろに隠れないようスクロール余白を確保 */
+  body:has(.composer-textarea:focus),
+  body:has(.detail-composer-textarea:focus),
+  body.keyboard-open {
+    padding-bottom: 50vh !important;
+  }
+
   .viewport {
     width: 100%;
     max-width: 520px;
@@ -224,6 +231,7 @@
     resize: none;
     padding: 0;
     overflow-y: hidden;
+    field-sizing: content;
   }
 
   textarea.composer-textarea::placeholder {
@@ -643,6 +651,7 @@
     padding: 0;
     box-sizing: border-box;
     overflow-y: hidden;
+    field-sizing: content;
   }
 
   .detail-composer-textarea::placeholder {
