@@ -2,13 +2,13 @@
 // botchitter — Service Worker (オフライン動作 & 高速起動キャッシュ)
 // =============================================================
 
-const CACHE_NAME = "botchitter-cache-v4";
+const CACHE_NAME = "botchitter-cache-v5";
 const ASSETS = [
   "./",
   "index.html",
-  "style.css?v=2.3",
-  "data.js?v=2.3",
-  "app.js?v=2.3",
+  "style.css?v=2.4",
+  "data.js?v=2.4",
+  "app.js?v=2.4",
   "manifest.json",
   "icon-192.png",
   "icon-512.png",
