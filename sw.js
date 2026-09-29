@@ -1,14 +1,16 @@
 // =============================================================
-// botchitter — Service Worker (オフライン動作 & 高速起動キャッシュ)
+// botchitter — Service Worker (オフライン動作)
+// 常にネットワークを優先し（HTTP キャッシュも再検証）、オフライン時だけキャッシュを返す。
+// そのためファイルを更新してもバージョン番号やクエリ文字列を上げる必要はない。
 // =============================================================
 
-const CACHE_NAME = "botchitter-cache-v5";
+const CACHE_NAME = "botchitter-cache-v6";
 const ASSETS = [
   "./",
   "index.html",
-  "style.css?v=2.4",
-  "data.js?v=2.4",
-  "app.js?v=2.4",
+  "style.css",
+  "data.js",
+  "app.js",
   "manifest.json",
   "icon-192.png",
   "icon-512.png",
@@ -18,36 +20,27 @@ const ASSETS = [
 // インストール時にコア資産をプリキャッシュ
 self.addEventListener("install", (event) => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
 });
 
 // 古いキャッシュを即時クリア
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
-    }).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+      .then(() => self.clients.claim())
   );
 });
 
-// フェッチ処理（Network-First: 最新のコードを優先取得しつつオフライン時はキャッシュ）
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: "no-cache" })
       .then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
+        if (networkResponse.status === 200) {
           const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
         }
         return networkResponse;
       })

@@ -2,6 +2,7 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    touch-action: manipulation;
   }
 
   /* ライトテーマ */
@@ -20,10 +21,7 @@
     --btn-text: #F7F7F4;
     --danger: #D9534F;
     --hover-overlay: rgba(0, 0, 0, 0.03);
-    --dot-shadow: rgba(24, 24, 23, 0.08);
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-    
-    --font-en: "Plus Jakarta Sans", -apple-system, sans-serif;
     --font-sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
   }
 
@@ -43,7 +41,6 @@
     --btn-text: #141413;
     --danger: #FF6B6B;
     --hover-overlay: rgba(255, 255, 255, 0.04);
-    --dot-shadow: rgba(236, 236, 230, 0.12);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -62,13 +59,7 @@
       --btn-text: #141413;
       --danger: #FF6B6B;
       --hover-overlay: rgba(255, 255, 255, 0.04);
-      --dot-shadow: rgba(236, 236, 230, 0.12);
     }
-  }
-
-  * {
-    box-sizing: border-box;
-    touch-action: manipulation;
   }
 
   html {
@@ -165,7 +156,6 @@
   }
 
   .logo {
-    font-family: var(--font-en);
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.06em;
@@ -173,18 +163,12 @@
     cursor: pointer;
   }
 
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
   .header-date {
     font-size: 12px;
     color: var(--text-secondary);
   }
 
-  .theme-toggle-btn {
+  .header-icon-btn {
     background: none;
     border: none;
     color: var(--text-secondary);
@@ -197,11 +181,11 @@
     justify-content: center;
     transition: color 0.15s, background-color 0.15s;
   }
-  .theme-toggle-btn:hover {
+  .header-icon-btn:hover {
     color: var(--text-primary);
     background: var(--hover-overlay);
   }
-  .theme-toggle-btn svg {
+  .header-icon-btn svg {
     width: 15px;
     height: 15px;
     stroke: currentColor;
@@ -341,25 +325,24 @@
     contain: layout style;
   }
 
-  .timeline::before {
-    display: none;
-  }
-
   .tweet-item {
     position: relative;
     padding: 16px 0 20px;
     display: flex;
     flex-direction: column;
     border-bottom: 1px solid var(--line);
-    animation: fadeInTweet 0.25s var(--ease-out);
     /* オクルージョンカリング：画面外の要素の描画・スタイル計算をスキップ */
     content-visibility: auto;
     contain-intrinsic-size: auto 130px;
     contain: layout style;
   }
-
-  .tweet-item::before {
-    display: none;
+  .tweet-item.enter {
+    animation: fadeInTweet 0.25s var(--ease-out);
+  }
+  .tweet-item.leaving {
+    opacity: 0;
+    transform: scale(0.96);
+    transition: opacity 0.15s ease, transform 0.15s ease;
   }
 
   .tweet-header {
@@ -424,7 +407,7 @@
     gap: 5px;
   }
 
-  .quoted-card-icon {
+  .quoted-card-date svg {
     width: 11px;
     height: 11px;
     stroke: currentColor;
@@ -527,10 +510,12 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    animation: fadeInTweet 0.2s var(--ease-out);
     content-visibility: auto;
     contain-intrinsic-size: auto 54px;
     contain: layout style;
+  }
+  .reply-item.enter {
+    animation: fadeInTweet 0.2s var(--ease-out);
   }
 
   .reply-meta {
@@ -547,30 +532,6 @@
     color: var(--text-primary);
     white-space: pre-wrap;
     word-break: break-word;
-  }
-
-  .reply-delete-btn {
-    background: none;
-    border: none;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2px 4px;
-    border-radius: 4px;
-    transition: color 0.15s, background-color 0.15s;
-  }
-  .reply-delete-btn:hover {
-    color: var(--danger);
-    background: var(--hover-overlay);
-  }
-  .reply-delete-btn svg {
-    width: 12px;
-    height: 12px;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    fill: none;
   }
 
   .reply-input-box {
@@ -694,6 +655,23 @@
     margin-top: 8px;
   }
 
+  .detail-focus-card .quoted-card {
+    margin-bottom: 16px;
+  }
+
+  .detail-focus-card .tweet-footer {
+    margin-top: 10px;
+  }
+
+  .view-detail .replies-thread {
+    margin-bottom: 24px;
+  }
+
+  .detail-missing {
+    padding: 40px 0;
+    color: var(--text-tertiary);
+  }
+
   .detail-meta {
     font-size: 13px;
     color: var(--text-tertiary);
@@ -719,7 +697,7 @@
     gap: 6px;
     font-variant-numeric: tabular-nums;
   }
-  .section-title-icon {
+  .detail-section-title svg {
     width: 13px;
     height: 13px;
     stroke: currentColor;
@@ -908,4 +886,53 @@
   .toast.show {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
+  }
+
+  /* ホーム画面追加の案内（iOS Safari のタブで開いた時だけ） */
+  .install-hint {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+  .install-hint.show {
+    display: flex;
+  }
+
+  /* メニュー（バックアップ） */
+  .menu-dialog {
+    padding: 6px 0;
+    overflow: hidden;
+  }
+
+  .menu-item {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 14px;
+    text-align: left;
+    color: var(--text-primary);
+    padding: 14px 22px;
+    cursor: pointer;
+  }
+  .menu-item + .menu-item {
+    border-top: 1px solid var(--line);
+  }
+  .menu-item:hover {
+    background: var(--hover-overlay);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
   }

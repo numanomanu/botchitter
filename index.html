@@ -12,20 +12,18 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2.4" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
 
+<!-- 文言はすべて app.js の I18N から入る -->
 <div class="viewport">
 
   <!-- ヘッダー -->
   <header>
     <div class="header-left">
-      <button class="btn-back" id="btnBack" onclick="goHome()" title="タイムラインに戻る">
+      <button class="btn-back" id="btnBack" onclick="goHome()" aria-label="Back">
         <svg viewBox="0 0 24 24">
           <line x1="19" y1="12" x2="5" y2="12"></line>
           <polyline points="12 19 5 12 12 5"></polyline>
@@ -35,9 +33,10 @@
     </div>
 
     <div class="header-right">
-      <div class="header-date" id="todayDateLabel">9月30日 水曜日</div>
-      <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="テーマ切り替え">
-        <!-- SVGはapp.jsから動的制御 -->
+      <div class="header-date" id="todayDateLabel"></div>
+      <button class="header-icon-btn" id="themeToggleBtn" onclick="toggleTheme()"></button>
+      <button class="header-icon-btn" onclick="openMenu()" aria-label="Menu">
+        <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
       </button>
     </div>
   </header>
@@ -45,14 +44,20 @@
   <!-- 1. メインタイムライン画面 -->
   <div class="view-timeline" id="viewTimeline">
 
+    <!-- iOS Safari のタブで開いた時だけ表示 -->
+    <div class="install-hint" id="installHint">
+      <span id="installHintText"></span>
+      <button class="btn-cancel-quote" onclick="dismissInstallHint()" aria-label="Close">✕</button>
+    </div>
+
     <!-- 投稿フォーム -->
     <section class="composer">
       <textarea
         id="composerInput"
         class="composer-textarea"
-        placeholder="今日、何を感じた？"
         rows="2"
         oninput="handleInput()"
+        onkeydown="submitOnCmdEnter(event, publishTweet)"
       ></textarea>
 
       <!-- 引用プレビュー -->
@@ -62,40 +67,43 @@
             <svg class="quote-preview-icon" viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
             <span id="quotePreviewDate"></span>
           </div>
-          <button class="btn-cancel-quote" onclick="clearQuote()" aria-label="✕">✕</button>
+          <button class="btn-cancel-quote" onclick="clearQuote()" aria-label="Close">✕</button>
         </div>
         <div class="quote-preview-body" id="quotePreviewText"></div>
       </div>
 
       <div class="composer-bottom">
-        <button id="postBtn" class="btn-post" disabled onclick="publishTweet()">
-          残す
-        </button>
+        <button id="postBtn" class="btn-post" disabled onclick="publishTweet()"></button>
       </div>
     </section>
 
     <!-- タイムライン -->
-    <main class="timeline" id="timelineStream">
-      <!-- app.js でレンダリング -->
-    </main>
+    <main class="timeline" id="timelineStream"></main>
 
   </div>
 
-  <!-- 2. ポスト詳細画面（Thread & Connections View） -->
+  <!-- 2. ポスト詳細画面（#tweet-<id>） -->
   <div class="view-detail" id="viewDetail">
-    <div id="detailContent">
-      <!-- app.js でレンダリング -->
-    </div>
+    <div id="detailContent"></div>
   </div>
 
   <!-- 削除確認モーダル -->
   <div class="confirm-overlay" id="confirmOverlay" onclick="closeConfirm()">
     <div class="confirm-dialog" onclick="event.stopPropagation()">
-      <div class="confirm-title" id="confirmTitle">削除しますか？</div>
+      <div class="confirm-title" id="confirmTitle"></div>
       <div class="confirm-actions">
-        <button class="btn-confirm-cancel" id="btnConfirmCancel" onclick="closeConfirm()">キャンセル</button>
-        <button class="btn-confirm-danger" id="btnConfirmDelete">削除</button>
+        <button class="btn-confirm-cancel" id="btnConfirmCancel" onclick="closeConfirm()"></button>
+        <button class="btn-confirm-danger" id="btnConfirmDelete" onclick="runConfirm()"></button>
       </div>
+    </div>
+  </div>
+
+  <!-- メニュー（バックアップの書き出し・読み込み） -->
+  <div class="confirm-overlay" id="menuOverlay" onclick="closeMenu()">
+    <div class="confirm-dialog menu-dialog" onclick="event.stopPropagation()">
+      <button class="menu-item" id="btnExport" onclick="exportData()"></button>
+      <label class="menu-item" id="btnImport" for="importInput"></label>
+      <input type="file" id="importInput" class="visually-hidden" accept=".json,application/json" onchange="importData(this)" />
     </div>
   </div>
 
@@ -104,9 +112,8 @@
 
 </div>
 
-<!-- 定数・シードデータ & アプリケーションロジック -->
-<script src="data.js?v=2.4"></script>
-<script src="app.js?v=2.4"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
 
 </body>
 </html>
