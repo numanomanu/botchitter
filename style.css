@@ -236,6 +236,22 @@
     align-items: center;
   }
 
+  .quote-preview-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .quote-preview-icon {
+    width: 12px;
+    height: 12px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+  }
+
   .btn-cancel-quote {
     background: none;
     border: none;
@@ -387,12 +403,38 @@
     align-items: center;
   }
 
+  .quoted-card-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .quoted-card-icon {
+    width: 11px;
+    height: 11px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+  }
+
   .quoted-card-comments-badge {
     font-size: 10px;
     background: var(--hover-overlay);
-    padding: 1px 6px;
-    border-radius: 4px;
+    padding: 2px 7px;
+    border-radius: 999px;
     color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .quoted-card-comments-badge svg {
+    width: 11px;
+    height: 11px;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    fill: none;
   }
 
   .quoted-card-body {
@@ -554,10 +596,27 @@
     color: var(--btn-text);
     border: none;
     border-radius: 999px;
-    padding: 5px 12px;
-    font-size: 11px;
-    font-weight: 500;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.15s, transform 0.1s;
+    box-sizing: border-box;
+    padding: 0;
+  }
+  .btn-submit-reply:hover {
+    opacity: 0.85;
+    transform: scale(1.05);
+  }
+  .btn-submit-reply svg {
+    width: 13px;
+    height: 13px;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    fill: none;
   }
 
   /* ---------------------------------
@@ -597,14 +656,21 @@
   }
 
   .detail-section-title {
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 0.04em;
-    color: var(--text-secondary);
-    text-transform: uppercase;
+    color: var(--text-tertiary);
     margin: 24px 0 12px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .section-title-icon {
+    width: 13px;
+    height: 13px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
   }
 
   /* このポストを引用した未来のポストたち（線の可視化） */

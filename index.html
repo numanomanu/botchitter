@@ -55,11 +55,14 @@
         oninput="handleInput()"
       ></textarea>
 
-      <!-- 引用中のポスト・コメントプレビュー -->
+      <!-- 引用プレビュー -->
       <div class="quote-preview" id="quotePreview">
         <div class="quote-preview-header">
-          <span id="quotePreviewLabel">引用中</span>
-          <button class="btn-cancel-quote" onclick="clearQuote()" title="引用を解除">✕</button>
+          <div class="quote-preview-meta">
+            <svg class="quote-preview-icon" viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            <span id="quotePreviewDate"></span>
+          </div>
+          <button class="btn-cancel-quote" onclick="clearQuote()" aria-label="✕">✕</button>
         </div>
         <div class="quote-preview-body" id="quotePreviewText"></div>
       </div>
@@ -88,10 +91,10 @@
   <!-- 削除確認モーダル -->
   <div class="confirm-overlay" id="confirmOverlay" onclick="closeConfirm()">
     <div class="confirm-dialog" onclick="event.stopPropagation()">
-      <div class="confirm-title" id="confirmTitle">この記録を削除しますか？</div>
+      <div class="confirm-title" id="confirmTitle">削除しますか？</div>
       <div class="confirm-actions">
         <button class="btn-confirm-cancel" id="btnConfirmCancel" onclick="closeConfirm()">キャンセル</button>
-        <button class="btn-confirm-danger" id="btnConfirmDelete">削除する</button>
+        <button class="btn-confirm-danger" id="btnConfirmDelete">削除</button>
       </div>
     </div>
   </div>
