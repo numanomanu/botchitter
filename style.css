@@ -66,6 +66,11 @@
     }
   }
 
+  * {
+    box-sizing: border-box;
+    touch-action: manipulation;
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
   }
@@ -78,6 +83,13 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  /* iOS Safari 自動ズーム防止：フォントサイズ16px以上を徹底 */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
   }
 
   .viewport {
@@ -209,24 +221,10 @@
   }
 
   .composer {
-    padding: 16px 0 14px 18px;
+    padding: 16px 0 14px;
     border-bottom: 1px solid var(--line);
     margin-bottom: 8px;
     position: relative;
-    box-sizing: border-box;
-  }
-
-  .composer::before {
-    content: "";
-    position: absolute;
-    left: -0.5px;
-    top: 24px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--bg);
-    border: 1.5px solid var(--text-tertiary);
-    opacity: 0.5;
   }
 
   textarea.composer-textarea {
@@ -236,12 +234,11 @@
     border: none;
     outline: none;
     font-family: inherit;
-    font-size: 16px;
+    font-size: 16px !important;
     line-height: 1.75;
     color: var(--text-primary);
     resize: none;
     padding: 0;
-    box-sizing: border-box;
   }
 
   textarea.composer-textarea::placeholder {
@@ -340,18 +337,12 @@
     display: flex;
     flex-direction: column;
     position: relative;
-    padding-left: 18px;
+    padding-left: 0;
     contain: layout style;
   }
 
   .timeline::before {
-    content: "";
-    position: absolute;
-    left: 2px;
-    top: 0;
-    bottom: 24px;
-    width: 1px;
-    background: var(--line);
+    display: none;
   }
 
   .tweet-item {
@@ -359,6 +350,7 @@
     padding: 16px 0 20px;
     display: flex;
     flex-direction: column;
+    border-bottom: 1px solid var(--line);
     animation: fadeInTweet 0.25s var(--ease-out);
     /* オクルージョンカリング：画面外の要素の描画・スタイル計算をスキップ */
     content-visibility: auto;
@@ -367,21 +359,7 @@
   }
 
   .tweet-item::before {
-    content: "";
-    position: absolute;
-    left: -18.5px;
-    top: 22px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--bg);
-    border: 1.5px solid var(--text-secondary);
-  }
-
-  .tweet-item.is-today::before {
-    background: var(--btn-bg);
-    border-color: var(--btn-bg);
-    box-shadow: 0 0 0 3px var(--dot-shadow);
+    display: none;
   }
 
   .tweet-header {
