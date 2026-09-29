@@ -84,15 +84,24 @@
     display: flex;
     flex-direction: column;
     position: relative;
-    padding: 0 24px 80px;
+    padding-left: calc(24px + env(safe-area-inset-left, 0px));
+    padding-right: calc(24px + env(safe-area-inset-right, 0px));
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
   }
 
-  /* ヘッダー */
+  /* ヘッダー: iPhone Dynamic Island / ノッチ (Safe Area Insets) 対応 */
   header {
-    height: 56px;
+    height: calc(56px + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+    margin-left: calc(-24px - env(safe-area-inset-left, 0px));
+    margin-right: calc(-24px - env(safe-area-inset-right, 0px));
+    padding-left: calc(24px + env(safe-area-inset-left, 0px));
+    padding-right: calc(24px + env(safe-area-inset-right, 0px));
+    box-sizing: border-box;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-end;
     flex-shrink: 0;
     position: sticky;
     top: 0;
@@ -103,10 +112,19 @@
     border-bottom: 1px solid var(--line);
   }
 
-  .header-left {
+  .header-left,
+  .header-right {
+    height: 56px;
     display: flex;
     align-items: center;
+  }
+
+  .header-left {
     gap: 12px;
+  }
+
+  .header-right {
+    gap: 14px;
   }
 
   .btn-back {
@@ -835,7 +853,7 @@
   /* トースト通知 */
   .toast {
     position: fixed;
-    bottom: 28px;
+    bottom: calc(28px + env(safe-area-inset-bottom, 0px));
     left: 50%;
     transform: translateX(-50%) translateY(20px);
     background: var(--card);
