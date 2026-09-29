@@ -2,7 +2,7 @@
 // botchitter — 一人Twitter: 定数および初期シードデータ
 // =============================================================
 
-const STORAGE_KEY = "botchitter_tweets_v2";
+const STORAGE_KEY = "botchitter_tweets_v3";
 const THEME_KEY = "botchitter_theme_mode";
 
 // 初期シードデータ（日本語）
@@ -12,7 +12,7 @@ const DEFAULT_TWEETS_JA = [
     id: "tw-intro-today",
     dateLabel: "20:30",
     isToday: true,
-    text: "誰にも見られない、自分だけのタイムライン。\n\n頭に浮かんだことを好きなように書き留めておく場所です。投稿はすべてこの端末の中にだけ保存されます。",
+    text: "誰にも見られない、自分だけのタイムライン。\n\n頭に浮かんだことを好きなように書き留めておく場所です。投稿はすべてこの端末の中にだけ保存されます。\n\n（能動的にシェアボタンを押した時だけ、任意のSNSへ投稿できます）",
     targetQuoteId: "tw-intro-past",
     quoted: {
       dateLabel: "14日前",
@@ -43,7 +43,7 @@ const DEFAULT_TWEETS_EN = [
     id: "tw-intro-today",
     dateLabel: "20:30",
     isToday: true,
-    text: "A private timeline for your thoughts, seen by no one else.\n\nEverything is saved locally on this device.",
+    text: "A private timeline for your thoughts, seen by no one else.\n\nEverything is saved locally on this device.\n\n(Only when you actively tap the share button, you can post to any SNS of your choice.)",
     targetQuoteId: "tw-intro-past",
     quoted: {
       dateLabel: "14d ago",

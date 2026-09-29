@@ -112,7 +112,7 @@ function toggleTheme() {
 // -------------------------------------------------------------
 // IndexedDB & LocalStorage ハイブリッド永続化層
 // -------------------------------------------------------------
-const DB_NAME = "botchitter_db_v2";
+const DB_NAME = "botchitter_db_v3";
 const DB_VERSION = 1;
 const STORE_NAME = "tweets_store";
 
