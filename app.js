@@ -407,8 +407,48 @@ function findItem(tweetId, replyId) {
   return replyId ? tweet?.replies.find((rep) => rep.id === replyId) : tweet;
 }
 
+// 下書き（一時保存）
+function saveComposerDraft() {
+  const text = composerInput.value;
+  if (!text.trim() && !currentQuoteTarget) {
+    try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+    return;
+  }
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      text,
+      quote: currentQuoteTarget
+    }));
+  } catch (e) {}
+}
+
+function clearComposerDraft() {
+  try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+}
+
+function restoreComposerDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    const draft = JSON.parse(raw);
+    if (draft.quote && findTweet(draft.quote.id)) {
+      currentQuoteTarget = draft.quote;
+      quotePreviewDate.textContent = formatTimestamp(draft.quote.createdAt);
+      quotePreviewText.textContent = draft.quote.text;
+      quotePreview.classList.add("active");
+    }
+    if (draft.text) {
+      composerInput.value = draft.text;
+      autoResizeTextarea(composerInput);
+    }
+    postBtn.disabled = !composerInput.value.trim();
+  } catch (e) {}
+}
+
 function handleInput() {
+  autoResizeTextarea(composerInput);
   postBtn.disabled = !composerInput.value.trim();
+  saveComposerDraft();
 }
 
 // ⌘/Ctrl + Enter で送信（IME 変換中は無視）
@@ -462,20 +502,46 @@ function publishTweet() {
   requestPersistentStorage();
 
   composerInput.value = "";
+  composerInput.style.height = "auto";
+  clearComposerDraft();
   clearQuote();
   refresh(`tw-${now}`);
 }
 
 function autoResizeTextarea(el) {
+  if (!el) return;
   window.requestAnimationFrame(() => {
     el.style.height = "auto";
     el.style.height = Math.min(el.scrollHeight, 160) + "px";
   });
 }
 
-function handleDetailReplyInput(el) {
+function handleDetailReplyInput(el, tweetId) {
   autoResizeTextarea(el);
-  $("detailPostBtn").disabled = !el.value.trim();
+  const btn = $("detailPostBtn");
+  if (btn) btn.disabled = !el.value.trim();
+  if (tweetId) {
+    try {
+      if (el.value.trim()) {
+        localStorage.setItem(REPLY_DRAFT_PREFIX + tweetId, el.value);
+      } else {
+        localStorage.removeItem(REPLY_DRAFT_PREFIX + tweetId);
+      }
+    } catch (e) {}
+  }
+}
+
+function handleTimelineReplyInput(el, tweetId) {
+  autoResizeTextarea(el);
+  if (tweetId) {
+    try {
+      if (el.value.trim()) {
+        localStorage.setItem(REPLY_DRAFT_PREFIX + tweetId, el.value);
+      } else {
+        localStorage.removeItem(REPLY_DRAFT_PREFIX + tweetId);
+      }
+    } catch (e) {}
+  }
 }
 
 function toggleReplyBox(tweetId) {
@@ -485,6 +551,12 @@ function toggleReplyBox(tweetId) {
   activeReplyBoxId = isOpen ? tweetId : null;
   if (isOpen) {
     const input = $(`reply-input-${tweetId}`);
+    try {
+      const saved = localStorage.getItem(REPLY_DRAFT_PREFIX + tweetId);
+      if (saved && !input.value) {
+        input.value = saved;
+      }
+    } catch (e) {}
     input.focus();
     autoResizeTextarea(input);
   }
@@ -498,6 +570,9 @@ function addReply(tweetId, inputId = `reply-input-${tweetId}`) {
   const now = Date.now();
   tweet.replies.push({ id: `rep-${now}`, createdAt: now, text });
   save();
+  try {
+    localStorage.removeItem(REPLY_DRAFT_PREFIX + tweetId);
+  } catch (e) {}
   activeReplyBoxId = null;
   refresh(tweetId);
 }
@@ -511,6 +586,12 @@ function deleteItem(tweetId, replyId) {
       tweet.replies = tweet.replies.filter((rep) => rep.id !== replyId);
     } else {
       tweets = tweets.filter((tw) => tw.id !== tweetId);
+      try {
+        localStorage.removeItem(REPLY_DRAFT_PREFIX + tweetId);
+      } catch (e) {}
+      if (currentQuoteTarget && currentQuoteTarget.id === tweetId) {
+        clearQuote();
+      }
       if (currentDetailId() === tweetId) goHome();
     }
     save();
@@ -655,7 +736,7 @@ function buildTweetItemHtml(tweet) {
           class="reply-input"
           placeholder="…"
           rows="1"
-          oninput="autoResizeTextarea(this)"
+          oninput="handleTimelineReplyInput(this, '${id}')"
           onkeydown="submitOnCmdEnter(event, () => addReply('${id}'))"
         ></textarea>
         <button class="btn-submit-reply" onclick="addReply('${id}')" aria-label="Send">${ICONS.send}</button>
@@ -736,7 +817,7 @@ function renderDetailView(tweetId) {
         class="detail-composer-textarea"
         placeholder="${t("placeholder_comment")}"
         rows="2"
-        oninput="handleDetailReplyInput(this)"
+        oninput="handleDetailReplyInput(this, '${id}')"
         onkeydown="submitOnCmdEnter(event, () => addReply('${id}', 'detail-reply-input'))"
       ></textarea>
       <div class="detail-composer-bottom">
@@ -756,6 +837,17 @@ function renderDetailView(tweetId) {
       </div>
     ` : ""}
   `;
+
+  const detailInput = $("detail-reply-input");
+  if (detailInput) {
+    try {
+      const saved = localStorage.getItem(REPLY_DRAFT_PREFIX + id);
+      if (saved) {
+        detailInput.value = saved;
+        handleDetailReplyInput(detailInput, id);
+      }
+    } catch (e) {}
+  }
 }
 
 // -------------------------------------------------------------
@@ -774,6 +866,7 @@ async function init() {
 
   renderTimeline();
   handleRouting();
+  restoreComposerDraft();
   window.addEventListener("hashchange", handleRouting);
 
   // 日付をまたいで再開したら「今日」「昨日」の表示を描き直す
