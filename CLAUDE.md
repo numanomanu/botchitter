@@ -6,6 +6,7 @@
 ## ルール
 - 状態を変えたら `save()` → `refresh(tweetId)`。DOM を個別に書き換えない（`refresh` がタイムラインと詳細画面の両方を直す）
 - 日付の表示文字列は保存しない。`createdAt` から `formatTimestamp()` で作る
+- 編集は詳細画面からだけ。上書きせず、前の版を `history` に残す（過去の思考を消さないため）
 - ユーザーが入力した文字列は `escapeHtml()` を通す。ID は onclick 属性に埋め込むので、外から来るデータは `normalizeTweets()` を通す（`isValidId` で弾く）
 - 保存キー（`data.js` の `DB_NAME` / `STORE_NAME` / `STORAGE_KEY`）は変えない。変えると既存ユーザーのデータが読めなくなる。形式を変えるときは `normalizeTweets()` で旧形式から移行する
 - 文言は `app.js` の `I18N`（ja / en）に置く。HTML に直接書かない

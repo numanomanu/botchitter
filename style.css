@@ -947,3 +947,74 @@
     opacity: 0;
     pointer-events: none;
   }
+
+  /* 編集（詳細画面だけ）と編集済みの印・前の版 */
+  .edited-mark {
+    display: inline-flex;
+    margin-left: 6px;
+    vertical-align: -1px;
+  }
+  .edited-mark svg,
+  .edit-history svg {
+    width: 10px;
+    height: 10px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+  }
+
+  .edit-history {
+    margin: -8px 0 14px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+  .reply-item .edit-history {
+    margin: 2px 0 0;
+  }
+  .edit-history summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    list-style: none;
+  }
+  .edit-history summary::-webkit-details-marker {
+    display: none;
+  }
+  .edit-history summary:hover {
+    color: var(--text-secondary);
+  }
+
+  .history-item {
+    margin-top: 10px;
+    padding-left: 10px;
+    border-left: 1.5px solid var(--line);
+  }
+  .history-meta {
+    margin-bottom: 2px;
+  }
+  .history-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .edit-box {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+  }
+  .reply-item .edit-box {
+    margin: 4px 0 2px;
+  }
+  .edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }

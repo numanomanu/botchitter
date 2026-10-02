@@ -2,9 +2,10 @@
 // botchitter — 一人Twitter: アプリケーションロジック
 //
 // データ（tweets 配列、新しい順。IndexedDB と localStorage に丸ごと保存）:
-//   tweet = { id, createdAt, text, targetQuoteId, quoted: { createdAt, text } | null, replies: [reply] }
-//   reply = { id, createdAt, text }
+//   tweet = { id, createdAt, editedAt, text, history, targetQuoteId, quoted: { createdAt, text } | null, replies: [reply] }
+//   reply = { id, createdAt, editedAt, text, history }
 //   quoted は引用した時点のスナップショット（元が消えても残る）。targetQuoteId は元ポストの ID。
+//   編集しても前の版は消さず history（[{ text, createdAt }]、古い順）に残す。editedAt は未編集なら null。
 // 表示用の日付は保存せず、描画のたびに createdAt から作る。
 // 状態を変えたら save() → refresh(tweetId) の順に呼ぶ。
 // =============================================================
@@ -12,6 +13,7 @@
 let tweets = [];
 let currentQuoteTarget = null; // { id, createdAt, text }
 let activeReplyBoxId = null;
+let editingTarget = null; // { tweetId, replyId, text }（詳細画面で編集中の項目と入力途中の文）
 let confirmCallback = null;
 let renderedDayKey = "";
 let timelineScrollY = 0;
@@ -38,6 +40,7 @@ const ICONS = {
   quote: `<svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`,
   share: `<svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>`,
   trash: `<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+  edit: `<svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`,
   send: `<svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`,
   sun: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
   moon: `<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`
@@ -53,10 +56,12 @@ const I18N = {
     placeholder_default: "今日、何を感じた？",
     placeholder_comment: "コメント",
     btn_post: "残す",
+    btn_save: "保存",
     btn_cancel: "キャンセル",
     btn_delete: "削除",
     confirm_delete: "削除しますか？",
     yesterday: "昨日",
+    edited: "編集済み",
     menu_export: "バックアップを書き出す",
     menu_import: "バックアップを読み込む",
     install_hint: "ホーム画面に追加すると、記録が消えにくくなります",
@@ -70,10 +75,12 @@ const I18N = {
     placeholder_default: "What did you feel today?",
     placeholder_comment: "Comment",
     btn_post: "Post",
+    btn_save: "Save",
     btn_cancel: "Cancel",
     btn_delete: "Delete",
     confirm_delete: "Delete?",
     yesterday: "Yesterday",
+    edited: "Edited",
     menu_export: "Export backup",
     menu_import: "Import backup",
     install_hint: "Add to Home Screen so your notes don't get cleared",
@@ -253,19 +260,31 @@ function toTimestamp(item) {
   return fromId > 1e12 ? fromId : Date.now();
 }
 
+// ポスト・コメント共通の項目（編集履歴は旧形式には無い）
+function normalizeEntry(item) {
+  const history = (Array.isArray(item.history) ? item.history : [])
+    .filter((v) => typeof v?.text === "string" && Number.isFinite(v.createdAt))
+    .map((v) => ({ text: v.text, createdAt: v.createdAt }));
+  return {
+    id: item.id,
+    createdAt: toTimestamp(item),
+    editedAt: Number.isFinite(item.editedAt) ? item.editedAt : null,
+    text: item.text,
+    history
+  };
+}
+
 function normalizeTweets(raw) {
   if (!Array.isArray(raw)) return [];
   const list = raw
     .filter((tw) => tw && isValidId(tw.id) && typeof tw.text === "string")
     .map((tw) => ({
-      id: tw.id,
-      createdAt: toTimestamp(tw),
-      text: tw.text,
+      ...normalizeEntry(tw),
       targetQuoteId: isValidId(tw.targetQuoteId) ? tw.targetQuoteId : null,
       quoted: typeof tw.quoted?.text === "string" ? { createdAt: tw.quoted.createdAt || null, text: tw.quoted.text } : null,
       replies: (Array.isArray(tw.replies) ? tw.replies : [])
         .filter((rep) => rep && isValidId(rep.id) && typeof rep.text === "string")
-        .map((rep) => ({ id: rep.id, createdAt: toTimestamp(rep), text: rep.text }))
+        .map(normalizeEntry)
     }));
 
   // 旧形式の引用は時刻しか持っていないので、引用元（ポストかそのコメント）から日時を補う
@@ -376,6 +395,7 @@ function handleRouting() {
   const detailId = currentDetailId();
   const wasTimeline = !viewTimeline.classList.contains("hidden");
   if (detailId && wasTimeline) timelineScrollY = window.scrollY;
+  editingTarget = null;
 
   viewTimeline.classList.toggle("hidden", !!detailId);
   viewDetail.classList.toggle("active", !!detailId);
@@ -493,7 +513,9 @@ function publishTweet() {
   tweets.unshift({
     id: `tw-${now}`,
     createdAt: now,
+    editedAt: null,
     text,
+    history: [],
     targetQuoteId: quote ? quote.id : null,
     quoted: quote ? { createdAt: quote.createdAt, text: quote.text } : null,
     replies: []
@@ -665,7 +687,7 @@ function addReply(tweetId, inputId = `reply-input-${tweetId}`) {
   if (!tweet || !text) return;
 
   const now = Date.now();
-  tweet.replies.push({ id: `rep-${now}`, createdAt: now, text });
+  tweet.replies.push({ id: `rep-${now}`, createdAt: now, editedAt: null, text, history: [] });
   save();
   try {
     localStorage.removeItem(REPLY_DRAFT_PREFIX + tweetId);
@@ -697,6 +719,52 @@ function deleteItem(tweetId, replyId) {
 }
 
 // -------------------------------------------------------------
+// 編集（詳細画面からだけ。前の版は history に残す）
+// -------------------------------------------------------------
+const isEditing = (tweetId, replyId = null) => editingTarget?.tweetId === tweetId && editingTarget.replyId === replyId;
+
+function startEdit(tweetId, replyId = null) {
+  const item = findItem(tweetId, replyId);
+  if (!item) return;
+  editingTarget = { tweetId, replyId, text: item.text };
+  renderDetailView(tweetId);
+  const input = $("edit-input");
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
+  autoResizeTextarea(input);
+}
+
+function handleEditInput(el) {
+  autoResizeTextarea(el);
+  editingTarget.text = el.value;
+  $("editSaveBtn").disabled = !el.value.trim();
+}
+
+function saveEdit() {
+  if (!editingTarget) return;
+  const { tweetId, replyId } = editingTarget;
+  const item = findItem(tweetId, replyId);
+  const text = editingTarget.text.trim();
+  if (!item || !text) return;
+
+  editingTarget = null;
+  if (text !== item.text) {
+    item.history.push({ text: item.text, createdAt: item.editedAt || item.createdAt });
+    item.text = text;
+    item.editedAt = Date.now();
+    save();
+  }
+  refresh(tweetId);
+}
+
+function cancelEdit() {
+  if (!editingTarget) return;
+  const { tweetId } = editingTarget;
+  editingTarget = null;
+  renderDetailView(tweetId);
+}
+
+// -------------------------------------------------------------
 // 削除確認モーダル
 // -------------------------------------------------------------
 function askConfirmation(onConfirm) {
@@ -719,6 +787,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     closeConfirm();
     closeMenu();
+    cancelEdit();
   }
 });
 
@@ -768,29 +837,81 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-// 作成直後（新規投稿・新規コメント）の要素だけフェードインさせる
+// 作成直後（新規投稿・新規コメント）の要素だけフェードインさせる。
+// 終わったらクラスを外す（残すと、隠れていたタイムラインを再表示した時に再生されてしまう）
 const enterClass = (createdAt) => (Date.now() - createdAt < 2000 ? "enter" : "");
+document.addEventListener("animationend", (e) => e.target.classList.remove("enter"));
 
-function buildReplyItemHtml(rep, tweetId) {
+// タイムラインでは日付の横に小さな印だけ出す（履歴は詳細画面で見る）
+const buildEditedMarkHtml = (item) =>
+  item.editedAt ? `<span class="edited-mark" title="${t("edited")}">${ICONS.edit}</span>` : "";
+
+// 編集前の版（詳細画面でだけ、たたんで見せる。新しい版から順に）
+function buildHistoryHtml(item) {
+  if (!item.history.length) return "";
+  const versions = [...item.history].reverse().map((v) => `
+    <div class="history-item">
+      <div class="history-meta">${formatTimestamp(v.createdAt, true)}</div>
+      <div class="history-text">${escapeHtml(v.text)}</div>
+    </div>
+  `).join("");
+  return `
+    <details class="edit-history">
+      <summary title="${t("edited")}">${ICONS.edit}${formatTimestamp(item.editedAt)}</summary>
+      ${versions}
+    </details>
+  `;
+}
+
+function buildEditBoxHtml() {
+  return `
+    <div class="edit-box">
+      <textarea
+        id="edit-input"
+        class="detail-composer-textarea"
+        rows="2"
+        oninput="handleEditInput(this)"
+        onkeydown="submitOnCmdEnter(event, saveEdit)"
+      >${escapeHtml(editingTarget.text)}</textarea>
+      <div class="edit-actions">
+        <button class="btn-confirm-cancel" onclick="cancelEdit()">${t("btn_cancel")}</button>
+        <button id="editSaveBtn" class="btn-post" onclick="saveEdit()">${t("btn_save")}</button>
+      </div>
+    </div>
+  `;
+}
+
+// inDetail=true（詳細画面）のときだけ編集ボタンと編集履歴を出す
+function buildReplyItemHtml(rep, tweetId, inDetail = false) {
   const args = `'${tweetId}', '${rep.id}'`;
+  if (inDetail && isEditing(tweetId, rep.id)) {
+    return `
+      <div class="reply-item">
+        <div class="reply-meta"><span>${formatTimestamp(rep.createdAt)}</span></div>
+        ${buildEditBoxHtml()}
+      </div>
+    `;
+  }
   return `
     <div class="reply-item ${enterClass(rep.createdAt)}">
       <div class="reply-meta">
-        <span>${formatTimestamp(rep.createdAt)}</span>
+        <span>${formatTimestamp(rep.createdAt)}${inDetail ? "" : buildEditedMarkHtml(rep)}</span>
         <div class="reply-actions">
+          ${inDetail ? `<button class="reply-action-btn" onclick="startEdit(${args})" aria-label="Edit">${ICONS.edit}</button>` : ""}
           <button class="reply-action-btn" onclick="shareItem(${args})" aria-label="Share">${ICONS.share}</button>
           <button class="reply-action-btn" onclick="quoteTweet(${args})" aria-label="Quote">${ICONS.quote}</button>
           <button class="reply-action-btn delete-btn" onclick="deleteItem(${args})" aria-label="Delete">${ICONS.trash}</button>
         </div>
       </div>
       <div class="reply-text">${escapeHtml(rep.text)}</div>
+      ${inDetail ? buildHistoryHtml(rep) : ""}
     </div>
   `;
 }
 
-function buildRepliesThreadHtml(tweet) {
+function buildRepliesThreadHtml(tweet, inDetail = false) {
   if (!tweet.replies.length) return "";
-  return `<div class="replies-thread">${tweet.replies.map((rep) => buildReplyItemHtml(rep, tweet.id)).join("")}</div>`;
+  return `<div class="replies-thread">${tweet.replies.map((rep) => buildReplyItemHtml(rep, tweet.id, inDetail)).join("")}</div>`;
 }
 
 // 引用カード（元ポストが残っていればリンクし、そのコメント数を出す）
@@ -809,8 +930,9 @@ function buildQuotedCardHtml(tweet) {
   `;
 }
 
-function buildPostActionsHtml(tweetId) {
+function buildPostActionsHtml(tweetId, inDetail = false) {
   return `
+    ${inDetail ? `<button class="action-btn" onclick="startEdit('${tweetId}')" aria-label="Edit">${ICONS.edit}</button>` : ""}
     <button class="action-btn" onclick="quoteTweet('${tweetId}')" aria-label="Quote">${ICONS.quote}</button>
     <button class="action-btn" onclick="shareItem('${tweetId}')" aria-label="Share">${ICONS.share}</button>
     <button class="action-btn delete-btn" onclick="deleteItem('${tweetId}')" aria-label="Delete">${ICONS.trash}</button>
@@ -822,7 +944,7 @@ function buildTweetItemHtml(tweet) {
   return `
     <article class="tweet-item ${enterClass(tweet.createdAt)}" id="${id}">
       <div class="tweet-header">
-        <span class="tweet-date-link" onclick="goToTweet('${id}')">${formatTimestamp(tweet.createdAt)}</span>
+        <span class="tweet-date-link" onclick="goToTweet('${id}')">${formatTimestamp(tweet.createdAt)}${buildEditedMarkHtml(tweet)}</span>
       </div>
       <div class="tweet-content" onclick="goToTweet('${id}')">${escapeHtml(tweet.text)}</div>
       ${buildQuotedCardHtml(tweet)}
@@ -897,16 +1019,21 @@ function renderDetailView(tweetId) {
   const replyCount = tweet.replies.length;
   const quotingPosts = tweets.filter((tw) => tw.targetQuoteId === id);
 
+  const isEditingPost = isEditing(id);
+
   detailContent.innerHTML = `
     <article class="detail-focus-card">
       <div class="detail-meta">${formatTimestamp(tweet.createdAt, true)}</div>
-      <div class="detail-text">${escapeHtml(tweet.text)}</div>
+      ${isEditingPost ? buildEditBoxHtml() : `
+        <div class="detail-text">${escapeHtml(tweet.text)}</div>
+        ${buildHistoryHtml(tweet)}
+      `}
       ${buildQuotedCardHtml(tweet)}
-      <div class="tweet-footer">${buildPostActionsHtml(id)}</div>
+      ${isEditingPost ? "" : `<div class="tweet-footer">${buildPostActionsHtml(id, true)}</div>`}
     </article>
 
     ${replyCount ? `<div class="detail-section-title">${ICONS.comment}<span>${replyCount}</span></div>` : ""}
-    ${buildRepliesThreadHtml(tweet)}
+    ${buildRepliesThreadHtml(tweet, true)}
 
     <section class="detail-composer">
       <textarea
@@ -973,7 +1100,7 @@ async function init() {
 
   // 何も保存されていない初回だけ案内用ポストを入れる（全部消した後の [] では復活させない）
   const stored = await loadTweets();
-  tweets = stored ? normalizeTweets(stored) : getDefaultTweets(LOCALE);
+  tweets = normalizeTweets(stored ?? getDefaultTweets(LOCALE));
   save();
 
   renderTimeline();
