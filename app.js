@@ -6,7 +6,7 @@
 //   reply = { id, createdAt, editedAt, text, history }
 //   quoted は引用した時点のスナップショット（元が消えても残る）。targetQuoteId は元ポストの ID。
 //   編集しても前の版は消さず history（[{ text, createdAt }]、古い順）に残す。editedAt は未編集なら null。
-// 表示用の日付は保存せず、描画のたびに createdAt から作る。
+// 表示用の日付は保存せず、描画のたびに createdAt から作る。タグも保存せず、本文の #xxx から都度読み取る。
 // 状態を変えたら save() → refresh(tweetId) の順に呼ぶ。
 // =============================================================
 
@@ -14,6 +14,7 @@ let tweets = [];
 let currentQuoteTarget = null; // { id, createdAt, text }
 let activeReplyBoxId = null;
 let editingTarget = null; // { tweetId, replyId, text }（詳細画面で編集中の項目と入力途中の文）
+let tagFilter = null; // タイムラインを絞り込み中のタグ（#tag-<tag> のとき）
 let confirmCallback = null;
 let renderedDayKey = "";
 let timelineScrollY = 0;
@@ -34,6 +35,8 @@ const themeToggleBtn = $("themeToggleBtn");
 const confirmOverlay = $("confirmOverlay");
 const menuOverlay = $("menuOverlay");
 const installHint = $("installHint");
+const tagFilterBar = $("tagFilterBar");
+const tagList = $("tagList");
 
 const ICONS = {
   comment: `<svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`,
@@ -323,6 +326,7 @@ function mergeTweets(incoming) {
 // バックアップ（書き出し / 読み込み）
 // -------------------------------------------------------------
 function openMenu() {
+  renderTagList();
   menuOverlay.classList.add("open");
 }
 
@@ -391,6 +395,16 @@ function currentDetailId() {
   return hash.startsWith("#tweet-") ? hash.slice("#tweet-".length) : null;
 }
 
+function currentTagFilter() {
+  const hash = window.location.hash;
+  if (!hash.startsWith("#tag-")) return null;
+  try {
+    return normalizeTag(decodeURIComponent(hash.slice("#tag-".length)));
+  } catch (e) {
+    return null;
+  }
+}
+
 function handleRouting() {
   const detailId = currentDetailId();
   const wasTimeline = !viewTimeline.classList.contains("hidden");
@@ -403,6 +417,13 @@ function handleRouting() {
 
   if (detailId) {
     renderDetailView(detailId);
+    window.scrollTo(0, 0);
+    return;
+  }
+  const tag = currentTagFilter();
+  if (tag !== tagFilter) {
+    tagFilter = tag;
+    renderTimeline();
     window.scrollTo(0, 0);
   } else if (!wasTimeline) {
     window.scrollTo(0, timelineScrollY);
@@ -528,6 +549,7 @@ function publishTweet() {
   clearComposerDraft();
   clearQuote();
   refresh(`tw-${now}`);
+  if (tagFilter && !matchesTag(tweets[0], tagFilter)) goHome();
 }
 
 // -------------------------------------------------------------
@@ -825,6 +847,53 @@ async function shareItem(tweetId, replyId) {
 }
 
 // -------------------------------------------------------------
+// タグ（本文中の #株 など。文字や数字の直後（今日は#株）と URL 中の # は除く。数字だけのものも除く）
+// -------------------------------------------------------------
+const TAG_PATTERN = /(^|[^\p{L}\p{N}_&\/:#＃])[#＃]([^\s#＃.,!?、。，．！？・「」『』（）()【】\[\]<>＜＞"'“”‘’:：;；\/\\]+)/gu;
+
+// 全角・半角や大文字・小文字の違いは同じタグとして扱う
+const normalizeTag = (raw) => raw.normalize("NFKC").toLowerCase();
+
+function* tagMatches(text) {
+  for (const m of text.matchAll(TAG_PATTERN)) {
+    const tag = normalizeTag(m[2]);
+    if (/^\d+$/.test(tag)) continue;
+    const start = m.index + m[1].length;
+    yield { tag, start, end: start + 1 + m[2].length };
+  }
+}
+
+// ポストとそのコメントに出てくるタグ
+const threadTags = (tweet) => [tweet, ...tweet.replies].flatMap((item) => [...tagMatches(item.text)].map((m) => m.tag));
+const matchesTag = (tweet, tag) => threadTags(tweet).includes(tag);
+
+function openTag(event, tag) {
+  event.stopPropagation();
+  closeMenu();
+  window.location.hash = `#tag-${encodeURIComponent(tag)}`;
+}
+
+// メニューのタグ一覧（そのタグを含むポストの数が多い順）
+function renderTagList() {
+  const counts = new Map();
+  for (const tweet of tweets) {
+    for (const tag of new Set(threadTags(tweet))) counts.set(tag, (counts.get(tag) || 0) + 1);
+  }
+  const sorted = [...counts].sort((a, b) => b[1] - a[1]);
+  tagList.innerHTML = sorted.map(([tag, count]) => `
+    <button class="tag-chip" data-tag="${escapeHtml(tag)}" onclick="openTag(event, this.dataset.tag)">#${escapeHtml(tag)}<span class="tag-count">${count}</span></button>
+  `).join("");
+  tagList.classList.toggle("show", sorted.length > 0);
+}
+
+function updateTagFilterBar() {
+  tagFilterBar.classList.toggle("show", !!tagFilter);
+  if (!tagFilter) return;
+  $("tagFilterLabel").textContent = `#${tagFilter}`;
+  $("tagFilterCount").textContent = tweets.filter((tw) => matchesTag(tw, tagFilter)).length;
+}
+
+// -------------------------------------------------------------
 // HTMLジェネレーター（文字のない直感UI）
 // -------------------------------------------------------------
 function escapeHtml(str) {
@@ -835,6 +904,18 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+// 本文を HTML にする。#タグはタップで絞り込み（タグは JS 文字列に埋め込まず data 属性から読む）
+function formatText(text) {
+  let html = "";
+  let last = 0;
+  for (const { tag, start, end } of tagMatches(text)) {
+    html += escapeHtml(text.slice(last, start));
+    html += `<span class="tag" data-tag="${escapeHtml(tag)}" onclick="openTag(event, this.dataset.tag)">${escapeHtml(text.slice(start, end))}</span>`;
+    last = end;
+  }
+  return html + escapeHtml(text.slice(last));
 }
 
 // 作成直後（新規投稿・新規コメント）の要素だけフェードインさせる。
@@ -903,7 +984,7 @@ function buildReplyItemHtml(rep, tweetId, inDetail = false) {
           <button class="reply-action-btn delete-btn" onclick="deleteItem(${args})" aria-label="Delete">${ICONS.trash}</button>
         </div>
       </div>
-      <div class="reply-text">${escapeHtml(rep.text)}</div>
+      <div class="reply-text">${formatText(rep.text)}</div>
       ${inDetail ? buildHistoryHtml(rep) : ""}
     </div>
   `;
@@ -946,7 +1027,7 @@ function buildTweetItemHtml(tweet) {
       <div class="tweet-header">
         <span class="tweet-date-link" onclick="goToTweet('${id}')">${formatTimestamp(tweet.createdAt)}${buildEditedMarkHtml(tweet)}</span>
       </div>
-      <div class="tweet-content" onclick="goToTweet('${id}')">${escapeHtml(tweet.text)}</div>
+      <div class="tweet-content" onclick="goToTweet('${id}')">${formatText(tweet.text)}</div>
       ${buildQuotedCardHtml(tweet)}
       ${buildRepliesThreadHtml(tweet)}
       <div class="reply-input-box ${activeReplyBoxId === id ? "open" : ""}" id="reply-box-${id}">
@@ -973,8 +1054,11 @@ function buildTweetItemHtml(tweet) {
 // -------------------------------------------------------------
 // 描画
 // -------------------------------------------------------------
+const isVisibleInTimeline = (tweet) => !tagFilter || matchesTag(tweet, tagFilter);
+
 function renderTimeline() {
-  timelineStream.innerHTML = tweets.map(buildTweetItemHtml).join("");
+  timelineStream.innerHTML = tweets.filter(isVisibleInTimeline).map(buildTweetItemHtml).join("");
+  updateTagFilterBar();
   renderedDayKey = dayKey(new Date());
 }
 
@@ -990,20 +1074,28 @@ function renderAll() {
 function refresh(tweetId) {
   const quotingIds = tweets.filter((tw) => tw.targetQuoteId === tweetId).map((tw) => tw.id);
   for (const id of [tweetId, ...quotingIds]) patchTimelineItem(id);
+  updateTagFilterBar();
   const detailId = currentDetailId();
   if (detailId) renderDetailView(detailId);
 }
 
+// 表示中なら差し替え、表示対象から外れたら消し、新たに対象になったら時系列の位置に差し込む
 function patchTimelineItem(id) {
   const el = $(id);
   const tweet = findTweet(id);
-  if (el && tweet) {
+  const visible = tweet && isVisibleInTimeline(tweet);
+  if (el && visible) {
     el.outerHTML = buildTweetItemHtml(tweet);
   } else if (el) {
     el.classList.add("leaving");
     setTimeout(() => el.remove(), 150);
-  } else if (tweet) {
-    timelineStream.insertAdjacentHTML("afterbegin", buildTweetItemHtml(tweet));
+  } else if (visible) {
+    const olderShown = tweets.slice(tweets.indexOf(tweet) + 1).find((tw) => $(tw.id));
+    if (olderShown) {
+      $(olderShown.id).insertAdjacentHTML("beforebegin", buildTweetItemHtml(tweet));
+    } else {
+      timelineStream.insertAdjacentHTML("beforeend", buildTweetItemHtml(tweet));
+    }
   }
 }
 
@@ -1025,7 +1117,7 @@ function renderDetailView(tweetId) {
     <article class="detail-focus-card">
       <div class="detail-meta">${formatTimestamp(tweet.createdAt, true)}</div>
       ${isEditingPost ? buildEditBoxHtml() : `
-        <div class="detail-text">${escapeHtml(tweet.text)}</div>
+        <div class="detail-text">${formatText(tweet.text)}</div>
         ${buildHistoryHtml(tweet)}
       `}
       ${buildQuotedCardHtml(tweet)}

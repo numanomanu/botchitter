@@ -50,6 +50,12 @@
       <button class="btn-cancel-quote" onclick="dismissInstallHint()" aria-label="Close">✕</button>
     </div>
 
+    <!-- タグで絞り込み中（#tag-<tag>） -->
+    <div class="tag-filter" id="tagFilterBar">
+      <span><span id="tagFilterLabel"></span><span class="tag-count" id="tagFilterCount"></span></span>
+      <button class="btn-cancel-quote" onclick="goHome()" aria-label="Close">✕</button>
+    </div>
+
     <!-- 投稿フォーム -->
     <section class="composer">
       <textarea
@@ -98,9 +104,10 @@
     </div>
   </div>
 
-  <!-- メニュー（バックアップの書き出し・読み込み） -->
+  <!-- メニュー（タグ一覧とバックアップの書き出し・読み込み） -->
   <div class="confirm-overlay" id="menuOverlay" onclick="closeMenu()">
     <div class="confirm-dialog menu-dialog" onclick="event.stopPropagation()">
+      <div class="tag-list" id="tagList"></div>
       <button class="menu-item" id="btnExport" onclick="exportData()"></button>
       <label class="menu-item" id="btnImport" for="importInput"></label>
       <input type="file" id="importInput" class="visually-hidden" accept=".json,application/json" onchange="importData(this)" />

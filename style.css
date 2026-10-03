@@ -20,6 +20,7 @@
     --btn-bg: #181817;
     --btn-text: #F7F7F4;
     --danger: #D9534F;
+    --tag: #4F6F96;
     --hover-overlay: rgba(0, 0, 0, 0.03);
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --font-sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
@@ -40,6 +41,7 @@
     --btn-bg: #ECECE6;
     --btn-text: #141413;
     --danger: #FF6B6B;
+    --tag: #8EAAD0;
     --hover-overlay: rgba(255, 255, 255, 0.04);
   }
 
@@ -58,6 +60,7 @@
       --btn-bg: #ECECE6;
       --btn-text: #141413;
       --danger: #FF6B6B;
+    --tag: #8EAAD0;
       --hover-overlay: rgba(255, 255, 255, 0.04);
     }
   }
@@ -1017,4 +1020,63 @@
     align-items: center;
     gap: 8px;
     margin-top: 8px;
+  }
+
+  /* タグ（本文中の #xxx）と絞り込み */
+  .tag {
+    color: var(--tag);
+    cursor: pointer;
+  }
+  .tag:hover {
+    text-decoration: underline;
+  }
+
+  .tag-count {
+    margin-left: 6px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tag-filter {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--tag);
+  }
+  .tag-filter.show {
+    display: flex;
+  }
+
+  .tag-list {
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 16px 14px;
+    max-height: 40vh;
+    overflow-y: auto;
+    border-bottom: 1px solid var(--line);
+  }
+  .tag-list.show {
+    display: flex;
+  }
+
+  .tag-chip {
+    display: inline-flex;
+    align-items: center;
+    background: var(--quote-bg);
+    border: none;
+    border-radius: 999px;
+    padding: 5px 11px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--tag);
+    cursor: pointer;
+  }
+  .tag-chip:hover {
+    background: var(--quote-hover);
   }
