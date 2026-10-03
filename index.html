@@ -58,13 +58,16 @@
 
     <!-- 投稿フォーム -->
     <section class="composer">
-      <textarea
-        id="composerInput"
-        class="composer-textarea"
-        rows="2"
-        oninput="handleInput()"
-        onkeydown="submitOnCmdEnter(event, publishTweet)"
-      ></textarea>
+      <div class="highlight-field">
+        <div class="highlight-backdrop" aria-hidden="true"></div>
+        <textarea
+          id="composerInput"
+          class="composer-textarea"
+          rows="2"
+          oninput="handleInput()"
+          onkeydown="submitOnCmdEnter(event, publishTweet)"
+        ></textarea>
+      </div>
 
       <!-- 引用プレビュー -->
       <div class="quote-preview" id="quotePreview">

@@ -16,6 +16,7 @@ let currentQuoteTarget = null; // { id, createdAt, text }
 let activeReplyBoxId = null;
 let editingTarget = null; // { tweetId, replyId, text }（詳細画面で編集中の項目と入力途中の文）
 let tagFilter = null; // タイムラインを絞り込み中のタグ（#tag-<tag> のとき）
+let autoTag = null; // { prefix, original } 絞り込み中に入力欄の先頭へ自動で入れたタグと、入れる前の文
 let confirmCallback = null;
 let renderedDayKey = "";
 let timelineScrollY = 0;
@@ -438,6 +439,7 @@ function handleRouting() {
   const tag = currentTagFilter();
   if (tag !== tagFilter) {
     tagFilter = tag;
+    applyAutoTag(tag);
     renderTimeline();
     window.scrollTo(0, 0);
   } else if (!wasTimeline) {
@@ -464,8 +466,14 @@ function findItem(tweetId, replyId) {
 }
 
 // 下書き（一時保存）
+// 自動で入れたタグが手つかずのままなら、タグを入れる前の文（下書き・投稿できるかの判定に使う）
+function composerDraftText() {
+  const value = composerInput.value;
+  return autoTag && value === autoTag.prefix + autoTag.original ? autoTag.original : value;
+}
+
 function saveComposerDraft() {
-  const text = composerInput.value;
+  const text = composerDraftText();
   if (!text.trim() && !currentQuoteTarget) {
     try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
     return;
@@ -497,14 +505,30 @@ function restoreComposerDraft() {
       composerInput.value = draft.text;
       autoResizeTextarea(composerInput);
     }
+    syncHighlight(composerInput);
     postBtn.disabled = !composerInput.value.trim();
   } catch (e) {}
 }
 
 function handleInput() {
   autoResizeTextarea(composerInput);
-  postBtn.disabled = !composerInput.value.trim();
+  postBtn.disabled = !composerDraftText().trim();
   saveComposerDraft();
+}
+
+// 絞り込み中は入力欄の先頭にそのタグを入れておく（ハイライトで見える。消せば普通の投稿になる）。
+// 絞り込みを外したとき、入れたあと手つかずなら元の文に戻す
+function applyAutoTag(tag) {
+  if (autoTag && composerInput.value === autoTag.prefix + autoTag.original) {
+    composerInput.value = autoTag.original;
+  }
+  autoTag = null;
+  if (tag && !findTags(composerInput.value).includes(tag)) {
+    autoTag = { prefix: `#${tag} `, original: composerInput.value };
+    composerInput.value = autoTag.prefix + autoTag.original;
+  }
+  syncHighlight(composerInput);
+  handleInput();
 }
 
 // ⌘/Ctrl + Enter で送信（IME 変換中は無視）
@@ -542,7 +566,7 @@ function clearQuote() {
 
 function publishTweet() {
   const text = composerInput.value.trim();
-  if (!text) return;
+  if (!composerDraftText().trim()) return;
 
   const now = Date.now();
   const quote = currentQuoteTarget;
@@ -562,10 +586,14 @@ function publishTweet() {
 
   composerInput.value = "";
   composerInput.style.height = "";
+  autoTag = null;
+  syncHighlight(composerInput);
   clearComposerDraft();
   clearQuote();
   refresh(`tw-${now}`);
+  // 絞り込み中：タグを消して投稿したら全体表示へ。そのままなら次の投稿のためにまたタグを入れておく
   if (tagFilter && !matchesTag(tweets[0], tagFilter)) goHome();
+  else if (tagFilter) applyAutoTag(tagFilter);
   attachLinkPreview(`tw-${now}`);
 }
 
@@ -717,6 +745,7 @@ function toggleReplyBox(tweetId) {
     } catch (e) {}
     input.focus();
     autoResizeTextarea(input);
+    syncHighlight(input);
   }
 }
 
@@ -974,6 +1003,40 @@ function updateTagFilterBar() {
 }
 
 // -------------------------------------------------------------
+// 入力欄の #タグのハイライト
+// textarea の後ろ（.highlight-backdrop）に同じ文を透明な文字で描き、タグの部分にだけ背景色を付ける。
+// 文字そのものは textarea が描くので、カーソルや日本語入力には影響しない。
+// 入力・スクロールは下のリスナーで追従。プログラムから value を変えたときは syncHighlight() を呼ぶ
+// -------------------------------------------------------------
+const HIGHLIGHT_STYLE_PROPS = [
+  "fontFamily", "fontSize", "fontWeight", "lineHeight", "letterSpacing",
+  "paddingTop", "paddingRight", "paddingBottom", "paddingLeft",
+  "borderTopWidth", "borderRightWidth", "borderBottomWidth", "borderLeftWidth"
+];
+
+function formatHighlight(text) {
+  const html = [...textTokens(text)]
+    .map((tk) => (tk.type === "tag" ? `<span class="tag-mark">${escapeHtml(tk.text)}</span>` : escapeHtml(tk.text)))
+    .join("");
+  return text.endsWith("\n") ? `${html} ` : html; // 末尾の改行ぶんの行も描く
+}
+
+function syncHighlight(el) {
+  const backdrop = el?.previousElementSibling;
+  if (!backdrop?.classList.contains("highlight-backdrop")) return;
+  const style = getComputedStyle(el);
+  for (const prop of HIGHLIGHT_STYLE_PROPS) backdrop.style[prop] = style[prop];
+  backdrop.innerHTML = formatHighlight(el.value);
+  backdrop.scrollTop = el.scrollTop;
+}
+
+document.addEventListener("input", (e) => syncHighlight(e.target));
+document.addEventListener("scroll", (e) => {
+  const backdrop = e.target.previousElementSibling;
+  if (backdrop?.classList.contains("highlight-backdrop")) backdrop.scrollTop = e.target.scrollTop;
+}, true);
+
+// -------------------------------------------------------------
 // HTMLジェネレーター（文字のない直感UI）
 // -------------------------------------------------------------
 function escapeHtml(str) {
@@ -1045,13 +1108,16 @@ function buildHistoryHtml(item) {
 function buildEditBoxHtml() {
   return `
     <div class="edit-box">
-      <textarea
-        id="edit-input"
-        class="detail-composer-textarea"
-        rows="2"
-        oninput="handleEditInput(this)"
-        onkeydown="submitOnCmdEnter(event, saveEdit)"
-      >${escapeHtml(editingTarget.text)}</textarea>
+      <div class="highlight-field">
+        <div class="highlight-backdrop" aria-hidden="true"></div>
+        <textarea
+          id="edit-input"
+          class="detail-composer-textarea"
+          rows="2"
+          oninput="handleEditInput(this)"
+          onkeydown="submitOnCmdEnter(event, saveEdit)"
+        >${escapeHtml(editingTarget.text)}</textarea>
+      </div>
       <div class="edit-actions">
         <button class="btn-confirm-cancel" onclick="cancelEdit()">${t("btn_cancel")}</button>
         <button id="editSaveBtn" class="btn-post" onclick="saveEdit()">${t("btn_save")}</button>
@@ -1131,14 +1197,17 @@ function buildTweetItemHtml(tweet) {
       ${buildQuotedCardHtml(tweet)}
       ${buildRepliesThreadHtml(tweet)}
       <div class="reply-input-box ${activeReplyBoxId === id ? "open" : ""}" id="reply-box-${id}">
-        <textarea
-          id="reply-input-${id}"
-          class="reply-input"
-          placeholder="…"
-          rows="1"
-          oninput="handleTimelineReplyInput(this, '${id}')"
-          onkeydown="submitOnCmdEnter(event, () => addReply('${id}'))"
-        ></textarea>
+        <div class="highlight-field">
+          <div class="highlight-backdrop" aria-hidden="true"></div>
+          <textarea
+            id="reply-input-${id}"
+            class="reply-input"
+            placeholder="…"
+            rows="1"
+            oninput="handleTimelineReplyInput(this, '${id}')"
+            onkeydown="submitOnCmdEnter(event, () => addReply('${id}'))"
+          ></textarea>
+        </div>
         <button class="btn-submit-reply" onclick="addReply('${id}')" aria-label="Send">${ICONS.send}</button>
       </div>
       <div class="tweet-footer">
@@ -1229,14 +1298,17 @@ function renderDetailView(tweetId) {
     ${buildRepliesThreadHtml(tweet, true)}
 
     <section class="detail-composer">
-      <textarea
-        id="detail-reply-input"
-        class="detail-composer-textarea"
-        placeholder="${t("placeholder_comment")}"
-        rows="2"
-        oninput="handleDetailReplyInput(this, '${id}')"
-        onkeydown="submitOnCmdEnter(event, () => addReply('${id}', 'detail-reply-input'))"
-      ></textarea>
+      <div class="highlight-field">
+        <div class="highlight-backdrop" aria-hidden="true"></div>
+        <textarea
+          id="detail-reply-input"
+          class="detail-composer-textarea"
+          placeholder="${t("placeholder_comment")}"
+          rows="2"
+          oninput="handleDetailReplyInput(this, '${id}')"
+          onkeydown="submitOnCmdEnter(event, () => addReply('${id}', 'detail-reply-input'))"
+        ></textarea>
+      </div>
       <div class="detail-composer-bottom">
         <button id="detailPostBtn" class="btn-post" disabled onclick="addReply('${id}', 'detail-reply-input')">${t("btn_post")}</button>
       </div>
@@ -1272,6 +1344,7 @@ function renderDetailView(tweetId) {
       }
     } catch (e) {}
   }
+  detailContent.querySelectorAll("textarea").forEach(syncHighlight);
 }
 
 // -------------------------------------------------------------
@@ -1297,8 +1370,8 @@ async function init() {
   save();
 
   renderTimeline();
-  handleRouting();
   restoreComposerDraft();
+  handleRouting();
   window.addEventListener("hashchange", handleRouting);
 
   // 日付をまたいで再開したら「今日」「昨日」の表示を描き直す

@@ -21,6 +21,7 @@
     --btn-text: #F7F7F4;
     --danger: #D9534F;
     --tag: #4F6F96;
+    --tag-bg: rgba(79, 111, 150, 0.16);
     --hover-overlay: rgba(0, 0, 0, 0.03);
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --font-sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
@@ -42,6 +43,7 @@
     --btn-text: #141413;
     --danger: #FF6B6B;
     --tag: #8EAAD0;
+    --tag-bg: rgba(142, 170, 208, 0.22);
     --hover-overlay: rgba(255, 255, 255, 0.04);
   }
 
@@ -61,6 +63,7 @@
       --btn-text: #141413;
       --danger: #FF6B6B;
     --tag: #8EAAD0;
+    --tag-bg: rgba(142, 170, 208, 0.22);
       --hover-overlay: rgba(255, 255, 255, 0.04);
     }
   }
@@ -1121,4 +1124,36 @@
     margin-top: 2px;
     font-size: 11px;
     color: var(--text-tertiary);
+  }
+
+  /* 入力欄の #タグのハイライト（textarea の後ろに同じ文を透明で描き、タグの部分にだけ背景を付ける） */
+  .highlight-field {
+    position: relative;
+  }
+  .highlight-field > textarea {
+    position: relative;
+    display: block;
+    width: 100%;
+    background: transparent;
+  }
+  .reply-input-box .highlight-field {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .highlight-backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0 solid transparent;
+    color: transparent;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .tag-mark {
+    background: var(--tag-bg);
+    border-radius: 3px;
+    box-shadow: 0 0 0 2px var(--tag-bg);
   }

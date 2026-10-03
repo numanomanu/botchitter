@@ -8,6 +8,8 @@
 - 状態を変えたら `save()` → `refresh(tweetId)`。DOM を個別に書き換えない（`refresh` がタイムラインと詳細画面の両方を直す）
 - 日付の表示文字列は保存しない。`createdAt` から `formatTimestamp()` で作る
 - タグは保存しない。本文の `#xxx` から `textTokens()` で都度読み取る（URL も同じ関数で切り出す）。絞り込みは URL の `#tag-<tag>`
+- 入力欄の textarea は `.highlight-field`（`.highlight-backdrop` + textarea）で包む（#タグのハイライト）。プログラムから value を変えたら `syncHighlight()` を呼ぶ
+- タグで絞り込み中は入力欄の先頭にそのタグを自動で入れる（`applyAutoTag()`）。手つかずなら解除時に外し、下書きにも残さない
 - リンクのタイトル（`link`）は投稿・編集した時に1回だけ `attachLinkPreview()` で取って保存する。表示のたびに外へ通信しない（画像も出さない）
 - `api/ogp.js` は誰でも呼べるので、内部ネットワーク宛ての拒否・時間・サイズ・リダイレクト回数の制限を外さない
 - 編集は詳細画面からだけ。上書きせず、前の版を `history` に残す（過去の思考を消さないため）
