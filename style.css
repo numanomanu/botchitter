@@ -1080,3 +1080,45 @@
   .tag-chip:hover {
     background: var(--quote-hover);
   }
+
+  /* 本文中のリンクとリンクカード */
+  .link {
+    color: var(--tag);
+    text-decoration: none;
+  }
+  .link:hover {
+    text-decoration: underline;
+  }
+
+  .link-card {
+    display: block;
+    margin: 4px 0 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: inherit;
+    text-decoration: none;
+    transition: background-color 0.15s;
+  }
+  .link-card:hover {
+    background: var(--hover-overlay);
+  }
+  .reply-item .link-card {
+    margin: 2px 0;
+  }
+
+  .link-card-title {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-primary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .link-card-site {
+    margin-top: 2px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }

@@ -2,10 +2,11 @@
 // botchitter — 一人Twitter: アプリケーションロジック
 //
 // データ（tweets 配列、新しい順。IndexedDB と localStorage に丸ごと保存）:
-//   tweet = { id, createdAt, editedAt, text, history, targetQuoteId, quoted: { createdAt, text } | null, replies: [reply] }
-//   reply = { id, createdAt, editedAt, text, history }
+//   tweet = { id, createdAt, editedAt, text, history, link, targetQuoteId, quoted: { createdAt, text } | null, replies: [reply] }
+//   reply = { id, createdAt, editedAt, text, history, link }
 //   quoted は引用した時点のスナップショット（元が消えても残る）。targetQuoteId は元ポストの ID。
 //   編集しても前の版は消さず history（[{ text, createdAt }]、古い順）に残す。editedAt は未編集なら null。
+//   link は本文の最初の URL のタイトルなど（{ url, title, siteName, image } | null）。投稿・編集した時に1回だけ api/ogp から取って保存する。
 // 表示用の日付は保存せず、描画のたびに createdAt から作る。タグも保存せず、本文の #xxx から都度読み取る。
 // 状態を変えたら save() → refresh(tweetId) の順に呼ぶ。
 // =============================================================
@@ -264,6 +265,19 @@ function toTimestamp(item) {
 }
 
 // ポスト・コメント共通の項目（編集履歴は旧形式には無い）
+const isHttpUrl = (v) => typeof v === "string" && /^https?:\/\//i.test(v);
+
+// href に入れるので http/https 以外の URL は捨てる
+function normalizeLink(link) {
+  if (!link || !isHttpUrl(link.url) || typeof link.title !== "string") return null;
+  return {
+    url: link.url,
+    title: link.title.slice(0, 200),
+    siteName: typeof link.siteName === "string" ? link.siteName.slice(0, 100) : "",
+    image: isHttpUrl(link.image) ? link.image : null
+  };
+}
+
 function normalizeEntry(item) {
   const history = (Array.isArray(item.history) ? item.history : [])
     .filter((v) => typeof v?.text === "string" && Number.isFinite(v.createdAt))
@@ -273,7 +287,8 @@ function normalizeEntry(item) {
     createdAt: toTimestamp(item),
     editedAt: Number.isFinite(item.editedAt) ? item.editedAt : null,
     text: item.text,
-    history
+    history,
+    link: normalizeLink(item.link)
   };
 }
 
@@ -537,6 +552,7 @@ function publishTweet() {
     editedAt: null,
     text,
     history: [],
+    link: null,
     targetQuoteId: quote ? quote.id : null,
     quoted: quote ? { createdAt: quote.createdAt, text: quote.text } : null,
     replies: []
@@ -550,6 +566,7 @@ function publishTweet() {
   clearQuote();
   refresh(`tw-${now}`);
   if (tagFilter && !matchesTag(tweets[0], tagFilter)) goHome();
+  attachLinkPreview(`tw-${now}`);
 }
 
 // -------------------------------------------------------------
@@ -709,13 +726,14 @@ function addReply(tweetId, inputId = `reply-input-${tweetId}`) {
   if (!tweet || !text) return;
 
   const now = Date.now();
-  tweet.replies.push({ id: `rep-${now}`, createdAt: now, editedAt: null, text, history: [] });
+  tweet.replies.push({ id: `rep-${now}`, createdAt: now, editedAt: null, text, history: [], link: null });
   save();
   try {
     localStorage.removeItem(REPLY_DRAFT_PREFIX + tweetId);
   } catch (e) {}
   activeReplyBoxId = null;
   refresh(tweetId);
+  attachLinkPreview(tweetId, `rep-${now}`);
 }
 
 // replyId があればコメント、無ければポストを削除
@@ -777,6 +795,7 @@ function saveEdit() {
     save();
   }
   refresh(tweetId);
+  attachLinkPreview(tweetId, replyId);
 }
 
 function cancelEdit() {
@@ -784,6 +803,38 @@ function cancelEdit() {
   const { tweetId } = editingTarget;
   editingTarget = null;
   renderDetailView(tweetId);
+}
+
+// -------------------------------------------------------------
+// リンクのタイトル取得（URL 付きで投稿・編集した時に1回だけ。結果を保存するのでオフラインでも出せる）
+// -------------------------------------------------------------
+async function attachLinkPreview(tweetId, replyId = null) {
+  const item = findItem(tweetId, replyId);
+  const url = item && findFirstUrl(item.text);
+  if (!item || (item.link?.url ?? null) === url) return;
+
+  const link = url ? await fetchLinkPreview(url) : null;
+  // 取得中に削除・編集されていたら捨てる
+  const current = findItem(tweetId, replyId);
+  if (!current || findFirstUrl(current.text) !== url) return;
+  current.link = link;
+  save();
+  refresh(tweetId);
+}
+
+async function fetchLinkPreview(url) {
+  try {
+    const res = await fetch("api/ogp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url })
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return normalizeLink({ url, title: data.title, siteName: data.siteName || new URL(url).hostname, image: data.image });
+  } catch (err) {
+    return null;
+  }
 }
 
 // -------------------------------------------------------------
@@ -847,24 +898,53 @@ async function shareItem(tweetId, replyId) {
 }
 
 // -------------------------------------------------------------
-// タグ（本文中の #株 など。文字や数字の直後（今日は#株）と URL 中の # は除く。数字だけのものも除く）
+// タグとリンク（本文中の #株 など。文字や数字の直後（今日は#株）と URL 中の # は除く。数字だけのものも除く）
 // -------------------------------------------------------------
 const TAG_PATTERN = /(^|[^\p{L}\p{N}_&\/:#＃])[#＃]([^\s#＃.,!?、。，．！？・「」『』（）()【】\[\]<>＜＞"'“”‘’:：;；\/\\]+)/gu;
 
 // 全角・半角や大文字・小文字の違いは同じタグとして扱う
 const normalizeTag = (raw) => raw.normalize("NFKC").toLowerCase();
 
-function* tagMatches(text) {
-  for (const m of text.matchAll(TAG_PATTERN)) {
+// URL は ASCII 文字まで（日本語が直後に続いても含めない。URL 中の日本語はふつう %E6… にエンコードされている）
+const URL_PATTERN = /https?:\/\/[^\s<>"'`\u0080-\uffff]+/g;
+
+// 末尾の句読点と、対になっていない閉じ括弧は URL に含めない（「(https://…)」「https://…。」など）
+function trimUrl(url) {
+  const trimmed = url.replace(/[.,!?;:]+$/, "");
+  return trimmed.endsWith(")") && !trimmed.includes("(") ? trimmed.slice(0, -1) : trimmed;
+}
+
+// 本文を { type: "text" | "link" | "tag", text, value } に分ける。URL の中の # はタグにしない
+function* textTokens(text) {
+  let last = 0;
+  for (const m of text.matchAll(URL_PATTERN)) {
+    const url = trimUrl(m[0]);
+    yield* tagTokens(text.slice(last, m.index));
+    yield { type: "link", text: url, value: url };
+    last = m.index + url.length;
+  }
+  yield* tagTokens(text.slice(last));
+}
+
+function* tagTokens(segment) {
+  let last = 0;
+  for (const m of segment.matchAll(TAG_PATTERN)) {
     const tag = normalizeTag(m[2]);
     if (/^\d+$/.test(tag)) continue;
     const start = m.index + m[1].length;
-    yield { tag, start, end: start + 1 + m[2].length };
+    const end = start + 1 + m[2].length;
+    yield { type: "text", text: segment.slice(last, start) };
+    yield { type: "tag", text: segment.slice(start, end), value: tag };
+    last = end;
   }
+  yield { type: "text", text: segment.slice(last) };
 }
 
+const findTags = (text) => [...textTokens(text)].filter((tk) => tk.type === "tag").map((tk) => tk.value);
+const findFirstUrl = (text) => [...textTokens(text)].find((tk) => tk.type === "link")?.value ?? null;
+
 // ポストとそのコメントに出てくるタグ
-const threadTags = (tweet) => [tweet, ...tweet.replies].flatMap((item) => [...tagMatches(item.text)].map((m) => m.tag));
+const threadTags = (tweet) => [tweet, ...tweet.replies].flatMap((item) => findTags(item.text));
 const matchesTag = (tweet, tag) => threadTags(tweet).includes(tag);
 
 function openTag(event, tag) {
@@ -906,22 +986,40 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-// 本文を HTML にする。#タグはタップで絞り込み（タグは JS 文字列に埋め込まず data 属性から読む）
+// 本文を HTML にする。#タグはタップで絞り込み（タグは JS 文字列に埋め込まず data 属性から読む）、URL はリンク
 function formatText(text) {
-  let html = "";
-  let last = 0;
-  for (const { tag, start, end } of tagMatches(text)) {
-    html += escapeHtml(text.slice(last, start));
-    html += `<span class="tag" data-tag="${escapeHtml(tag)}" onclick="openTag(event, this.dataset.tag)">${escapeHtml(text.slice(start, end))}</span>`;
-    last = end;
-  }
-  return html + escapeHtml(text.slice(last));
+  return [...textTokens(text)].map((tk) => {
+    if (tk.type === "tag") {
+      return `<span class="tag" data-tag="${escapeHtml(tk.value)}" onclick="openTag(event, this.dataset.tag)">${escapeHtml(tk.text)}</span>`;
+    }
+    if (tk.type === "link") {
+      return `<a class="link" href="${escapeHtml(tk.value)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${escapeHtml(displayUrl(tk.value))}</a>`;
+    }
+    return escapeHtml(tk.text);
+  }).join("");
+}
+
+// 表示用に短くする（https:// と www. を省き、長ければ末尾を切る）
+function displayUrl(url) {
+  const short = url.replace(/^https?:\/\/(www\.)?/, "");
+  return short.length > 40 ? `${short.slice(0, 39)}…` : short;
 }
 
 // 作成直後（新規投稿・新規コメント）の要素だけフェードインさせる。
 // 終わったらクラスを外す（残すと、隠れていたタイムラインを再表示した時に再生されてしまう）
 const enterClass = (createdAt) => (Date.now() - createdAt < 2000 ? "enter" : "");
 document.addEventListener("animationend", (e) => e.target.classList.remove("enter"));
+
+// リンクカード（タイトルとサイト名だけ。画像は表示のたびに相手のサイトへ通信が出るので出さない）
+function buildLinkCardHtml(item) {
+  if (!item.link) return "";
+  return `
+    <a class="link-card" href="${escapeHtml(item.link.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">
+      <div class="link-card-title">${escapeHtml(item.link.title)}</div>
+      <div class="link-card-site">${escapeHtml(item.link.siteName)}</div>
+    </a>
+  `;
+}
 
 // タイムラインでは日付の横に小さな印だけ出す（履歴は詳細画面で見る）
 const buildEditedMarkHtml = (item) =>
@@ -985,6 +1083,7 @@ function buildReplyItemHtml(rep, tweetId, inDetail = false) {
         </div>
       </div>
       <div class="reply-text">${formatText(rep.text)}</div>
+      ${buildLinkCardHtml(rep)}
       ${inDetail ? buildHistoryHtml(rep) : ""}
     </div>
   `;
@@ -1028,6 +1127,7 @@ function buildTweetItemHtml(tweet) {
         <span class="tweet-date-link" onclick="goToTweet('${id}')">${formatTimestamp(tweet.createdAt)}${buildEditedMarkHtml(tweet)}</span>
       </div>
       <div class="tweet-content" onclick="goToTweet('${id}')">${formatText(tweet.text)}</div>
+      ${buildLinkCardHtml(tweet)}
       ${buildQuotedCardHtml(tweet)}
       ${buildRepliesThreadHtml(tweet)}
       <div class="reply-input-box ${activeReplyBoxId === id ? "open" : ""}" id="reply-box-${id}">
@@ -1118,6 +1218,7 @@ function renderDetailView(tweetId) {
       <div class="detail-meta">${formatTimestamp(tweet.createdAt, true)}</div>
       ${isEditingPost ? buildEditBoxHtml() : `
         <div class="detail-text">${formatText(tweet.text)}</div>
+        ${buildLinkCardHtml(tweet)}
         ${buildHistoryHtml(tweet)}
       `}
       ${buildQuotedCardHtml(tweet)}
