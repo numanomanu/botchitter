@@ -17,13 +17,15 @@ const SEED_TEXT = {
     today: "誰にも見られない、自分だけのタイムライン。\n\n頭に浮かんだことを好きなように書き留めておく場所です。投稿はすべてこの端末の中にだけ保存されます。\n\n（能動的にシェアボタンを押した時だけ、任意のSNSへ投稿できます）",
     past: "自分自身が振り返るための記録。 #はじめに",
     reply: "過去の呟きにコメントを重ねたり、引用して思考を繋げられます。",
-    replyTag: "#はじめに のようにタグを付けておくと、タップで同じタグの投稿だけを見返せます。"
+    replyTag: "#はじめに のようにタグを付けておくと、タップで同じタグの投稿だけを見返せます。",
+    replyMood: "残すときに入力欄の色の丸を選ぶと、そのときの気分も残せます。上の日付をタップすると、量や気分を草で振り返れます。"
   },
   en: {
     today: "A private timeline for your thoughts, seen by no one else.\n\nEverything is saved locally on this device.\n\n(Only when you actively tap the share button, you can post to any SNS of your choice.)",
     past: "A personal space to reflect over time. #welcome",
     reply: "Add comments or quote past notes to follow how your thoughts evolve.",
-    replyTag: "Add a tag like #welcome, then tap it to see only the posts with that tag."
+    replyTag: "Add a tag like #welcome, then tap it to see only the posts with that tag.",
+    replyMood: "Pick a colored dot when posting to record how you felt. Tap the date at the top to look back at your posts and moods."
   }
 };
 
@@ -36,17 +38,20 @@ function getDefaultTweets(locale) {
       id: "tw-intro-today",
       createdAt: now,
       text: text.today,
+      mood: 4,
       targetQuoteId: "tw-intro-past",
       quoted: { createdAt: past, text: text.past },
       replies: [
         { id: "rep-intro-1", createdAt: now, text: text.reply },
-        { id: "rep-intro-2", createdAt: now, text: text.replyTag }
+        { id: "rep-intro-2", createdAt: now, text: text.replyTag },
+        { id: "rep-intro-3", createdAt: now, text: text.replyMood }
       ]
     },
     {
       id: "tw-intro-past",
       createdAt: past,
       text: text.past,
+      mood: 3,
       targetQuoteId: null,
       quoted: null,
       replies: []

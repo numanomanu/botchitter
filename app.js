@@ -2,10 +2,11 @@
 // botchitter — 一人Twitter: アプリケーションロジック
 //
 // データ（tweets 配列、新しい順。IndexedDB と localStorage に丸ごと保存）:
-//   tweet = { id, createdAt, editedAt, text, history, link, targetQuoteId, quoted: { createdAt, text } | null, replies: [reply] }
+//   tweet = { id, createdAt, editedAt, text, history, link, mood, targetQuoteId, quoted: { createdAt, text } | null, replies: [reply] }
 //   reply = { id, createdAt, editedAt, text, history, link }
 //   quoted は引用した時点のスナップショット（元が消えても残る）。targetQuoteId は元ポストの ID。
 //   編集しても前の版は消さず history（[{ text, createdAt }]、古い順）に残す。editedAt は未編集なら null。
+//   mood は投稿したときの気分（1 とても沈んでいる 〜 5 とても晴れやか）。任意で、未設定は null。ポストだけに付ける。
 //   link は本文の最初の URL のタイトルなど（{ url, title, siteName, image } | null）。投稿・編集した時に1回だけ api/ogp から取って保存する。
 // 表示用の日付は保存せず、描画のたびに createdAt から作る。タグも保存せず、本文の #xxx から都度読み取る。
 // 状態を変えたら save() → refresh(tweetId) の順に呼ぶ。
@@ -17,6 +18,8 @@ let activeReplyBoxId = null;
 let editingTarget = null; // { tweetId, replyId, text }（詳細画面で編集中の項目と入力途中の文）
 let tagFilter = null; // タイムラインを絞り込み中のタグ（#tag-<tag> のとき）
 let monthFilter = null; // タイムラインを絞り込み中の月 YYYY-MM（#month-<YYYY-MM> のとき）
+let composerMood = null; // 入力欄で選んでいる気分（1〜5 / null）
+let archiveMode = "count"; // 草の色: "count"（ポスト数）か "mood"（その日の気分の平均）
 let pendingScroll = null; // 草から月を開いた直後のスクロール先: "top" か押した日 YYYY-MM-DD（URL には入れない）
 let autoTag = null; // { prefix, original } 絞り込み中に入力欄の先頭へ自動で入れたタグと、入れる前の文
 let confirmCallback = null;
@@ -81,9 +84,15 @@ const I18N = {
     theme_light_title: "ライトモード",
     theme_dark_title: "ダークモード",
     archive_all: "すべて",
+    archive_mode_count: "量",
+    archive_mode_mood: "気分",
     heat_less: "少",
     heat_more: "多",
-    heat_cell_title: (date, n) => `${date} ${n}件`
+    mood_low: "沈",
+    mood_high: "晴",
+    heat_cell_title: (date, n) => `${date} ${n}件`,
+    heat_cell_title_mood: (date, n, avg) => `${date} ${n}件・気分 ${avg}`,
+    mood_label: (m) => ["とても沈んでいる", "すこし沈んでいる", "ふつう", "すこし晴れやか", "とても晴れやか"][m - 1]
   },
   en: {
     placeholder_default: "What did you feel today?",
@@ -105,9 +114,15 @@ const I18N = {
     theme_light_title: "Light mode",
     theme_dark_title: "Dark mode",
     archive_all: "All",
+    archive_mode_count: "Posts",
+    archive_mode_mood: "Mood",
     heat_less: "Less",
     heat_more: "More",
-    heat_cell_title: (date, n) => `${date}: ${n}`
+    mood_low: "Low",
+    mood_high: "High",
+    heat_cell_title: (date, n) => `${date}: ${n}`,
+    heat_cell_title_mood: (date, n, avg) => `${date}: ${n}, mood ${avg}`,
+    mood_label: (m) => ["Very low", "Low", "Neutral", "Good", "Great"][m - 1]
   }
 };
 
@@ -324,6 +339,7 @@ function normalizeTweets(raw) {
     .filter((tw) => tw && isValidId(tw.id) && typeof tw.text === "string")
     .map((tw) => ({
       ...normalizeEntry(tw),
+      mood: isMood(tw.mood) ? tw.mood : null,
       targetQuoteId: isValidId(tw.targetQuoteId) ? tw.targetQuoteId : null,
       quoted: typeof tw.quoted?.text === "string" ? { createdAt: tw.quoted.createdAt || null, text: tw.quoted.text } : null,
       replies: (Array.isArray(tw.replies) ? tw.replies : [])
@@ -531,14 +547,15 @@ function composerDraftText() {
 
 function saveComposerDraft() {
   const text = composerDraftText();
-  if (!text.trim() && !currentQuoteTarget) {
+  if (!text.trim() && !currentQuoteTarget && !composerMood) {
     try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
     return;
   }
   try {
     localStorage.setItem(DRAFT_KEY, JSON.stringify({
       text,
-      quote: currentQuoteTarget
+      quote: currentQuoteTarget,
+      mood: composerMood
     }));
   } catch (e) {}
 }
@@ -562,6 +579,7 @@ function restoreComposerDraft() {
       composerInput.value = draft.text;
       autoResizeTextarea(composerInput);
     }
+    if (isMood(draft.mood)) composerMood = draft.mood;
     syncHighlight(composerInput);
     postBtn.disabled = !composerInput.value.trim();
   } catch (e) {}
@@ -634,6 +652,7 @@ function publishTweet() {
     text,
     history: [],
     link: null,
+    mood: composerMood,
     targetQuoteId: quote ? quote.id : null,
     quoted: quote ? { createdAt: quote.createdAt, text: quote.text } : null,
     replies: []
@@ -643,6 +662,8 @@ function publishTweet() {
 
   composerInput.value = "";
   composerInput.style.height = "";
+  composerMood = null;
+  renderComposerMood();
   autoTag = null;
   syncHighlight(composerInput);
   clearComposerDraft();
@@ -854,7 +875,7 @@ const isEditing = (tweetId, replyId = null) => editingTarget?.tweetId === tweetI
 function startEdit(tweetId, replyId = null) {
   const item = findItem(tweetId, replyId);
   if (!item) return;
-  editingTarget = { tweetId, replyId, text: item.text };
+  editingTarget = { tweetId, replyId, text: item.text, mood: replyId ? null : item.mood };
   renderDetailView(tweetId);
   const input = $("edit-input");
   input.focus();
@@ -870,18 +891,24 @@ function handleEditInput(el) {
 
 function saveEdit() {
   if (!editingTarget) return;
-  const { tweetId, replyId } = editingTarget;
+  const { tweetId, replyId, mood } = editingTarget;
   const item = findItem(tweetId, replyId);
   const text = editingTarget.text.trim();
   if (!item || !text) return;
 
   editingTarget = null;
+  let changed = false;
   if (text !== item.text) {
     item.history.push({ text: item.text, createdAt: item.editedAt || item.createdAt });
     item.text = text;
     item.editedAt = Date.now();
-    save();
+    changed = true;
   }
+  if (!replyId && mood !== item.mood) {
+    item.mood = mood;
+    changed = true;
+  }
+  if (changed) save();
   refresh(tweetId);
   attachLinkPreview(tweetId, replyId);
 }
@@ -984,6 +1011,38 @@ async function shareItem(tweetId, replyId) {
   } catch (err) {}
   window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
 }
+
+// -------------------------------------------------------------
+// 気分（1 とても沈んでいる 〜 5 とても晴れやか）。色の丸5つで選び、もう一度押すと外れる
+// -------------------------------------------------------------
+const isMood = (v) => Number.isInteger(v) && v >= 1 && v <= 5;
+
+function moodPickerInnerHtml(selected, onPick) {
+  return [1, 2, 3, 4, 5].map((m) => `
+    <button class="mood-dot m${m} ${selected === m ? "is-selected" : ""}" onclick="${onPick}(${m})" aria-label="${t("mood_label", m)}" title="${t("mood_label", m)}"></button>
+  `).join("");
+}
+
+function renderMoodPicker(el, selected, onPick) {
+  el.innerHTML = moodPickerInnerHtml(selected, onPick);
+  el.classList.toggle("has-selection", isMood(selected));
+}
+
+const renderComposerMood = () => renderMoodPicker($("composerMood"), composerMood, "pickComposerMood");
+
+function pickComposerMood(mood) {
+  composerMood = composerMood === mood ? null : mood;
+  renderComposerMood();
+  saveComposerDraft();
+}
+
+function pickEditMood(mood) {
+  editingTarget.mood = editingTarget.mood === mood ? null : mood;
+  renderMoodPicker($("editMood"), editingTarget.mood, "pickEditMood");
+}
+
+const buildMoodMarkHtml = (tweet) =>
+  tweet.mood ? `<span class="mood-mark m${tweet.mood}" title="${t("mood_label", tweet.mood)}"></span>` : "";
 
 // -------------------------------------------------------------
 // タグとリンク（本文中の #株 など。文字や数字の直後（今日は#株）と URL 中の # は除く。数字だけのものも除く）
@@ -1187,6 +1246,9 @@ function buildEditBoxHtml() {
         >${escapeHtml(editingTarget.text)}</textarea>
       </div>
       <div class="edit-actions">
+        ${editingTarget.replyId ? "" : `
+          <div class="mood-picker ${isMood(editingTarget.mood) ? "has-selection" : ""}" id="editMood">${moodPickerInnerHtml(editingTarget.mood, "pickEditMood")}</div>
+        `}
         <button class="btn-confirm-cancel" onclick="cancelEdit()">${t("btn_cancel")}</button>
         <button id="editSaveBtn" class="btn-post" onclick="saveEdit()">${t("btn_save")}</button>
       </div>
@@ -1258,7 +1320,7 @@ function buildTweetItemHtml(tweet) {
   return `
     <article class="tweet-item ${enterClass(tweet.createdAt)}" id="${id}">
       <div class="tweet-header">
-        <span class="tweet-date-link" onclick="goToTweet('${id}')">${formatTimestamp(tweet.createdAt)}${buildEditedMarkHtml(tweet)}</span>
+        <span class="tweet-date-link" onclick="goToTweet('${id}')">${formatTimestamp(tweet.createdAt)}${buildMoodMarkHtml(tweet)}${buildEditedMarkHtml(tweet)}</span>
       </div>
       <div class="tweet-content" onclick="goToTweet('${id}')">${formatText(tweet.text)}</div>
       ${buildLinkCardHtml(tweet)}
@@ -1354,7 +1416,7 @@ function renderDetailView(tweetId) {
 
   detailContent.innerHTML = `
     <article class="detail-focus-card">
-      <div class="detail-meta">${formatTimestamp(tweet.createdAt, true)}</div>
+      <div class="detail-meta">${formatTimestamp(tweet.createdAt, true)}${buildMoodMarkHtml(tweet)}</div>
       ${isEditingPost ? buildEditBoxHtml() : `
         <div class="detail-text">${formatText(tweet.text)}</div>
         ${buildLinkCardHtml(tweet)}
@@ -1420,7 +1482,8 @@ function renderDetailView(tweetId) {
 // -------------------------------------------------------------
 // 振り返り（草）
 // GitHub の草を、スマホの幅に収まるよう「縦に月・横に日（1〜31）」に並べ替えて年ごとに出す。
-// 色はその日のポスト数（タグを選ぶとそのタグのポストだけ）。タップするとその月のタイムラインを、押した日の位置で開く
+// 色はその日のポスト数か、その日の気分の平均（切り替え）。タグを選ぶとそのタグのポストだけ。
+// タップするとその月のタイムラインを、押した日の位置で開く
 // -------------------------------------------------------------
 function openArchive(tag = tagFilter) {
   closeMenu();
@@ -1457,34 +1520,68 @@ function scrollToDay(key) {
 
 const heatLevel = (count) => (count >= 5 ? 4 : count >= 3 ? 3 : count);
 
+function setArchiveMode(mode) {
+  archiveMode = mode;
+  renderArchive(parseRoute().tag);
+}
+
 function renderArchive(tag) {
-  const counts = new Map(); // "YYYY-MM-DD" → ポスト数
+  const days = new Map(); // "YYYY-MM-DD" → { count, moodSum, moodCount }
   for (const tweet of tweets) {
     if (tag && !matchesTag(tweet, tag)) continue;
     const key = dayKey(new Date(tweet.createdAt));
-    counts.set(key, (counts.get(key) || 0) + 1);
+    const day = days.get(key) || { count: 0, moodSum: 0, moodCount: 0 };
+    day.count++;
+    if (tweet.mood) {
+      day.moodSum += tweet.mood;
+      day.moodCount++;
+    }
+    days.set(key, day);
   }
 
   const now = new Date();
   const firstYear = tweets.length ? new Date(Math.min(...tweets.map((tw) => tw.createdAt))).getFullYear() : now.getFullYear();
   const years = [];
-  for (let year = now.getFullYear(); year >= firstYear; year--) years.push(buildHeatYearHtml(year, counts, now));
+  for (let year = now.getFullYear(); year >= firstYear; year--) years.push(buildHeatYearHtml(year, days, now));
 
   const chips = [[null, tweets.length], ...tagCounts()].map(([chipTag, count]) => `
     <button class="tag-chip ${chipTag === tag ? "is-active" : ""}" data-tag="${escapeHtml(chipTag || "")}" onclick="openArchive(this.dataset.tag)">
       ${chipTag ? `#${escapeHtml(chipTag)}` : t("archive_all")}<span class="tag-count">${count}</span>
     </button>
   `).join("");
-  const legend = [0, 1, 2, 3, 4].map((level) => `<span class="heat-cell l${level}"></span>`).join("");
+  const legend = archiveMode === "mood"
+    ? `${t("mood_low")}${[1, 2, 3, 4, 5].map((m) => `<span class="heat-cell m${m}"></span>`).join("")}${t("mood_high")}`
+    : `${t("heat_less")}${[0, 1, 2, 3, 4].map((level) => `<span class="heat-cell l${level}"></span>`).join("")}${t("heat_more")}`;
+  const modes = ["count", "mood"].map((mode) => `
+    <button class="mode-btn ${archiveMode === mode ? "is-active" : ""}" onclick="setArchiveMode('${mode}')">${t(`archive_mode_${mode}`)}</button>
+  `).join("");
 
   archiveContent.innerHTML = `
     <div class="archive-tags">${chips}</div>
-    <div class="heat-legend">${t("heat_less")}${legend}${t("heat_more")}</div>
+    <div class="archive-bar">
+      <div class="archive-mode">${modes}</div>
+      <div class="heat-legend">${legend}</div>
+    </div>
     ${years.join("")}
   `;
 }
 
-function buildHeatYearHtml(year, counts, now) {
+// 気分モードでは、投稿はあるが気分の付いていない日は灰色（no-mood）
+function heatCellClass(day) {
+  if (!day) return "l0";
+  if (archiveMode === "count") return `l${heatLevel(day.count)}`;
+  return day.moodCount ? `m${Math.round(day.moodSum / day.moodCount)}` : "no-mood";
+}
+
+function heatCellTitle(date, day) {
+  const label = monthDayFormat.format(date);
+  if (archiveMode === "mood" && day?.moodCount) {
+    return t("heat_cell_title_mood", label, day.count, (day.moodSum / day.moodCount).toFixed(1));
+  }
+  return t("heat_cell_title", label, day?.count || 0);
+}
+
+function buildHeatYearHtml(year, days, now) {
   let yearTotal = 0;
   const rows = [];
   for (let month = 0; month < 12; month++) {
@@ -1499,10 +1596,10 @@ function buildHeatYearHtml(year, counts, now) {
         continue;
       }
       const date = new Date(year, month, day);
-      const count = counts.get(dayKey(date)) || 0;
-      monthTotal += count;
-      const classes = [`l${heatLevel(count)}`, date > now ? "is-future" : "", dayKey(date) === dayKey(now) ? "is-today" : ""].join(" ");
-      cells.push(`<span class="heat-cell ${classes}" data-day="${pad2(day)}" title="${t("heat_cell_title", monthDayFormat.format(date), count)}"></span>`);
+      const stats = days.get(dayKey(date));
+      monthTotal += stats?.count || 0;
+      const classes = [heatCellClass(stats), date > now ? "is-future" : "", dayKey(date) === dayKey(now) ? "is-today" : ""].join(" ");
+      cells.push(`<span class="heat-cell ${classes}" data-day="${pad2(day)}" title="${heatCellTitle(date, stats)}"></span>`);
     }
     yearTotal += monthTotal;
     const clickable = monthTotal > 0 && !isFutureMonth;
@@ -1546,6 +1643,7 @@ async function init() {
 
   renderTimeline();
   restoreComposerDraft();
+  renderComposerMood();
   handleRouting();
   window.addEventListener("hashchange", handleRouting);
 
