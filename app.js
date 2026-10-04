@@ -113,10 +113,13 @@ function formatDateDivider(date) {
   const yesterdayDay = dayKey(yesterday);
 
   if (targetDay === todayDay) {
-    return `${t("today")} (${headerDateFormat.format(date)})`;
+    return t("today");
   }
   if (targetDay === yesterdayDay) {
-    return `${t("yesterday")} (${headerDateFormat.format(date)})`;
+    return t("yesterday");
+  }
+  if (date.getFullYear() === now.getFullYear()) {
+    return headerDateFormat.format(date);
   }
   return fullDateFormat.format(date);
 }
