@@ -1,7 +1,10 @@
-# botchitter — 自分にしか見えないタイムライン
+# ボッチッター (botchitter) — 自分にしか見えないタイムライン
 
 > **「今を観る。点を残す。いつか、線になる。」**  
 > 自分にしか見えないタイムライン。自分が主役で、誰も邪魔しない、思考と感情を淡々と残すための完全ローカル完結型PWA。
+
+- **URL:** https://botchitter.vercel.app
+- **License:** [MIT License](LICENSE)
 
 ---
 

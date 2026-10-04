@@ -5,10 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="botchitter" />
+  <meta name="apple-mobile-web-app-title" content="ボッチッター" />
+  <meta name="description" content="ボッチッター（botchitter）は、誰にも見られない自分専用のタイムラインPWAです。SNSに疲れた人のために、思考や感情を淡々と残せる完全ローカルな空間を提供します。" />
   <meta name="theme-color" content="#F7F7F4" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#141413" media="(prefers-color-scheme: dark)" />
-  <title>botchitter — 自分にしか見えないタイムライン</title>
+  <title>ボッチッター (botchitter) — 自分にしか見えないタイムライン</title>
+  <link rel="canonical" href="https://botchitter.vercel.app/" />
+
+  <!-- OGP & Twitter Cards -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="ボッチッター (botchitter) — 自分にしか見えないタイムライン" />
+  <meta property="og:description" content="誰にも見られない自分専用のタイムライン。SNSに疲れた時、思考や感情を淡々と残す完全ローカル完結型PWA。" />
+  <meta property="og:url" content="https://botchitter.vercel.app/" />
+  <meta property="og:site_name" content="ボッチッター" />
+  <meta property="og:image" content="https://botchitter.vercel.app/icon-512.png" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="ボッチッター (botchitter) — 自分にしか見えないタイムライン" />
+  <meta name="twitter:description" content="誰にも見られない自分専用のタイムライン。SNSに疲れた時、思考や感情を淡々と残す完全ローカル完結型PWA。" />
+  <meta name="twitter:image" content="https://botchitter.vercel.app/icon-512.png" />
+
+  <!-- 構造化データ (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "ボッチッター",
+    "alternateName": ["botchitter", "ボッチッター — 自分にしか見えないタイムライン"],
+    "url": "https://botchitter.vercel.app/",
+    "description": "誰にも見られない自分専用のタイムラインPWA。SNSに疲れた人のための思考ログツール。",
+    "applicationCategory": "LifestyleApplication",
+    "operatingSystem": "All",
+    "offers": {
+      "@type": "Offer",
+      "price": "0"
+    }
+  }
+  </script>
+
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
@@ -21,6 +54,9 @@
 </head>
 
 <body>
+
+<h1 class="visually-hidden">ボッチッター (botchitter) — 自分にしか見えないタイムライン</h1>
+<noscript><p>ボッチッター（botchitter）は、誰にも見られない自分だけのタイムラインを残せるPWAです。ご利用にはJavaScriptを有効にしてください。</p></noscript>
 
 <!-- 文言はすべて app.js の I18N から入る -->
 <div class="viewport">

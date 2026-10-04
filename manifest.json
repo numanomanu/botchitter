@@ -1,7 +1,7 @@
 {
-  "name": "botchitter — 自分にしか見えないタイムライン",
-  "short_name": "botchitter",
-  "description": "自分にしか見えないタイムライン。自分が主役で、誰も邪魔しない、思考と感情を淡々と残す場所。",
+  "name": "ボッチッター — 自分にしか見えないタイムライン",
+  "short_name": "ボッチッター",
+  "description": "ボッチッター（botchitter）は、自分にしか見えないタイムライン。自分が主役で、誰も邪魔しない、思考と感情を淡々と残す場所。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
