@@ -358,7 +358,7 @@ function goHome() {
 
 function removeFilter(kind) {
   if (kind === "search") {
-    clearSearch();
+    closeSearch();
   } else {
     navigate({
       tag: kind === "tag" ? null : tagFilter,
@@ -383,8 +383,8 @@ window.addEventListener("keydown", (e) => {
     return;
   }
   if (e.key === "Escape") {
-    if (isSearchOpen && document.activeElement === searchInput) {
-      searchInput.blur();
+    if (isSearchOpen || !!searchFilter) {
+      closeSearch();
       return;
     }
     closeMoodMenus();

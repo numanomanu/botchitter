@@ -6,7 +6,7 @@ let searchInputTimer = null;
 let isSearchComposing = false; // 日本語の変換中は絞り込まない（確定で絞り込む）
 
 function toggleSearch() {
-  if (isSearchOpen && document.activeElement === searchInput) closeSearch();
+  if (isSearchOpen || !!searchFilter) closeSearch();
   else openSearch();
 }
 
@@ -25,11 +25,21 @@ function openSearch() {
 
 function closeSearch() {
   isSearchOpen = false;
-  clearSearch();
+  searchFilter = null;
+  if (searchInput) {
+    searchInput.value = "";
+    searchInput.blur();
+  }
+  syncSearchUi();
+  renderTimeline();
+  navigate({ tag: tagFilter, month: monthFilter, search: null, replace: true });
 }
 
 function clearSearch() {
-  searchInput.value = "";
+  if (searchInput) {
+    searchInput.value = "";
+    searchInput.focus();
+  }
   applySearch(null);
 }
 
