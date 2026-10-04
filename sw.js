@@ -4,7 +4,7 @@
 // そのためファイルを更新してもバージョン番号やクエリ文字列を上げる必要はない。
 // =============================================================
 
-const CACHE_NAME = "botchitter-cache-v26";
+const CACHE_NAME = "botchitter-cache-v27";
 const ASSETS = [
   "./",
   "index.html",

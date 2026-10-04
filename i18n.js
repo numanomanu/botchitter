@@ -56,7 +56,8 @@ const I18N = {
     search_empty: "該当する記録は見つかりませんでした",
     btn_clear_search: "検索を解除",
     nav_prev: "前",
-    nav_next: "次"
+    nav_next: "次",
+    app_title: "ボッチッター (botchitter) — 自分にしか見えないタイムライン"
   },
   en: {
     placeholder_default: "What did you feel today?",
@@ -97,7 +98,8 @@ const I18N = {
     search_empty: "No matching notes found",
     btn_clear_search: "Clear search",
     nav_prev: "Prev",
-    nav_next: "Next"
+    nav_next: "Next",
+    app_title: "botchitter — A timeline only for yourself"
   }
 };
 
@@ -108,6 +110,7 @@ function t(key, ...args) {
 
 function applyTranslations() {
   document.documentElement.lang = LOCALE;
+  document.title = t("app_title");
   if ($("composerInput")) $("composerInput").placeholder = t("placeholder_default");
   if ($("postBtn")) $("postBtn").textContent = t("btn_post");
   if ($("confirmTitle")) $("confirmTitle").textContent = t("confirm_delete");
