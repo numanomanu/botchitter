@@ -18,6 +18,8 @@ let activeReplyBoxId = null;
 let editingTarget = null; // { tweetId, replyId, text }（詳細画面で編集中の項目と入力途中の文）
 let tagFilter = null; // タイムラインを絞り込み中のタグ（#tag-<tag> のとき）
 let monthFilter = null; // タイムラインを絞り込み中の月 YYYY-MM（#month-<YYYY-MM> のとき）
+let searchFilter = null; // タイムラインを絞り込み中の検索語（#q-<query> のとき）
+let isSearchOpen = false;
 let composerMood = null; // 入力欄で選んでいる気分（1〜5 / null）
 let pendingScroll = null; // 草から月を開いた直後のスクロール先: "top" か押した日 YYYY-MM-DD（URL には入れない）
 let autoTag = null; // { prefix, original } 絞り込み中に入力欄の先頭へ自動で入れたタグと、入れる前の文
@@ -37,6 +39,10 @@ const detailContent = $("detailContent");
 const viewTimeline = $("viewTimeline");
 const viewDetail = $("viewDetail");
 const btnBack = $("btnBack");
+const btnSearch = $("btnSearch");
+const searchBar = $("searchBar");
+const searchInput = $("searchInput");
+const btnClearSearch = $("btnClearSearch");
 const confirmOverlay = $("confirmOverlay");
 const menuOverlay = $("menuOverlay");
 const installHint = $("installHint");
@@ -44,6 +50,7 @@ const filterBar = $("filterBar");
 const viewArchive = $("viewArchive");
 const archiveContent = $("archiveContent");
 const tagList = $("tagList");
+const btnRandom = $("btnRandom");
 
 const ICONS = {
   comment: `<svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`,
@@ -72,6 +79,7 @@ const I18N = {
     yesterday: "昨日",
     edited: "編集済み",
     menu_archive: "振り返る",
+    menu_random: "過去の点と再会する",
     menu_export: "バックアップを書き出す",
     menu_import: "バックアップを読み込む",
     install_hint: "ホーム画面に追加すると、記録が消えにくくなります",
@@ -92,7 +100,8 @@ const I18N = {
     memory_year: "1年前の今日",
     memory_month: "1か月前の今日",
     count_posts: (n) => `${n}件`,
-    mood_label: (m) => ["とても沈んでいる", "すこし沈んでいる", "ふつう", "すこし晴れやか", "とても晴れやか"][m - 1]
+    mood_label: (m) => ["とても沈んでいる", "すこし沈んでいる", "ふつう", "すこし晴れやか", "とても晴れやか"][m - 1],
+    search_placeholder: "過去の記録を検索…"
   },
   en: {
     placeholder_default: "What did you feel today?",
@@ -105,6 +114,7 @@ const I18N = {
     yesterday: "Yesterday",
     edited: "Edited",
     menu_archive: "Look back",
+    menu_random: "Meet a past moment",
     menu_export: "Export backup",
     menu_import: "Import backup",
     install_hint: "Add to Home Screen so your notes don't get cleared",
@@ -125,7 +135,8 @@ const I18N = {
     memory_year: "A year ago today",
     memory_month: "A month ago today",
     count_posts: (n) => `${n} posts`,
-    mood_label: (m) => ["Very low", "Low", "Neutral", "Good", "Great"][m - 1]
+    mood_label: (m) => ["Very low", "Low", "Neutral", "Good", "Great"][m - 1],
+    search_placeholder: "Search past notes..."
   }
 };
 
@@ -142,10 +153,12 @@ function applyTranslations() {
   $("btnConfirmCancel").textContent = t("btn_cancel");
   $("btnConfirmDelete").textContent = t("btn_delete");
   $("btnArchive").textContent = t("menu_archive");
+  if ($("btnRandom")) $("btnRandom").textContent = t("menu_random");
   $("todayDateLabel").title = t("menu_archive");
   $("btnExport").textContent = t("menu_export");
   $("btnImport").textContent = t("menu_import");
   $("installHintText").textContent = t("install_hint");
+  if ($("searchInput")) $("searchInput").placeholder = t("search_placeholder");
 }
 
 // -------------------------------------------------------------
@@ -282,7 +295,17 @@ function save() {
     .then(async () => {
       isSaveQueued = false;
       await saveToDB(tweets);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tweets));
+      // localStorage は容量上限（約5MB）があるため、容量超過時は直近の最新データのみを保存
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tweets));
+      } catch (err) {
+        try {
+          const recentFallback = tweets.slice(0, 50);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(recentFallback));
+        } catch (fallbackErr) {
+          // IndexedDB に保存できているため、localStorage の容量超過は許容して継続
+        }
+      }
     })
     .catch((err) => console.warn("Storage save failed:", err));
 }
@@ -462,8 +485,8 @@ function currentDetailId() {
 
 function parseRoute() {
   const detailId = currentDetailId();
-  if (detailId) return { view: "detail", detailId, tag: null, month: null };
-  const route = { view: "timeline", detailId: null, tag: null, month: null };
+  if (detailId) return { view: "detail", detailId, tag: null, month: null, search: null };
+  const route = { view: "timeline", detailId: null, tag: null, month: null, search: null };
   for (const part of window.location.hash.slice(1).split("&")) {
     if (part === "archive") route.view = "archive";
     else if (/^month-\d{4}-\d{2}$/.test(part)) route.month = part.slice("month-".length);
@@ -471,16 +494,21 @@ function parseRoute() {
       try {
         route.tag = normalizeTag(decodeURIComponent(part.slice("tag-".length)));
       } catch (e) {}
+    } else if (part.startsWith("q-")) {
+      try {
+        route.search = decodeURIComponent(part.slice("q-".length)).trim() || null;
+      } catch (e) {}
     }
   }
   return route;
 }
 
-function navigate({ view = "timeline", tag = null, month = null } = {}) {
+function navigate({ view = "timeline", tag = null, month = null, search = null } = {}) {
   const parts = [];
   if (view === "archive") parts.push("archive");
   if (month) parts.push(`month-${month}`);
   if (tag) parts.push(`tag-${encodeURIComponent(tag)}`);
+  if (search) parts.push(`q-${encodeURIComponent(search)}`);
   window.location.hash = parts.join("&");
 }
 
@@ -505,10 +533,12 @@ function handleRouting() {
     window.scrollTo(0, 0);
     return;
   }
-  if (route.tag !== tagFilter || route.month !== monthFilter) {
+  if (route.tag !== tagFilter || route.month !== monthFilter || route.search !== searchFilter) {
     if (route.tag !== tagFilter) applyAutoTag(route.tag);
     tagFilter = route.tag;
     monthFilter = route.month;
+    searchFilter = route.search;
+    syncSearchUi();
     renderTimeline();
     window.scrollTo(0, 0);
   } else if (!wasTimeline) {
@@ -523,9 +553,94 @@ function goHome() {
   window.location.hash = "";
 }
 
-// タイムラインの絞り込みを1つ外す（月かタグ）
+// タイムラインの絞り込みを1つ外す（月かタグか検索）
 function removeFilter(kind) {
-  navigate({ tag: kind === "tag" ? null : tagFilter, month: kind === "month" ? null : monthFilter });
+  if (kind === "search") {
+    clearSearch();
+  } else {
+    navigate({
+      tag: kind === "tag" ? null : tagFilter,
+      month: kind === "month" ? null : monthFilter,
+      search: searchFilter
+    });
+  }
+}
+
+// -------------------------------------------------------------
+// 検索
+// -------------------------------------------------------------
+function toggleSearch() {
+  if (isSearchOpen) {
+    closeSearch();
+  } else {
+    openSearch(true);
+  }
+}
+
+function openSearch(focus = true) {
+  isSearchOpen = true;
+  if (searchBar) searchBar.classList.add("show");
+  if (btnSearch) btnSearch.classList.add("active");
+  if (focus && searchInput) {
+    searchInput.focus();
+    searchInput.select();
+  }
+}
+
+function closeSearch() {
+  isSearchOpen = false;
+  if (searchBar) searchBar.classList.remove("show");
+  if (btnSearch) btnSearch.classList.remove("active");
+  if (searchFilter) {
+    clearSearch();
+  }
+}
+
+function clearSearch() {
+  if (searchInput) searchInput.value = "";
+  if (btnClearSearch) btnClearSearch.classList.remove("show");
+  if (searchFilter) {
+    searchFilter = null;
+    navigate({ tag: tagFilter, month: monthFilter, search: null });
+  }
+}
+
+let searchInputTimer = null;
+function handleSearchInput(val) {
+  if (btnClearSearch) btnClearSearch.classList.toggle("show", !!val);
+  clearTimeout(searchInputTimer);
+  searchInputTimer = setTimeout(() => {
+    const q = val.trim() || null;
+    if (q !== searchFilter) {
+      searchFilter = q;
+      navigate({ tag: tagFilter, month: monthFilter, search: searchFilter });
+    }
+  }, 120);
+}
+
+function syncSearchUi() {
+  if (!searchBar || !searchInput) return;
+  if (searchFilter) {
+    isSearchOpen = true;
+    searchBar.classList.add("show");
+    if (btnSearch) btnSearch.classList.add("active");
+    if (searchInput.value !== searchFilter) {
+      searchInput.value = searchFilter;
+    }
+    if (btnClearSearch) btnClearSearch.classList.add("show");
+  } else if (!isSearchOpen) {
+    searchBar.classList.remove("show");
+    if (btnSearch) btnSearch.classList.remove("active");
+    if (btnClearSearch) btnClearSearch.classList.remove("show");
+  }
+}
+
+// ランダムに過去の1投稿を開く（偶然の再会）
+function openRandomTweet() {
+  if (!tweets || tweets.length === 0) return;
+  closeMenu();
+  const randomTweet = tweets[Math.floor(Math.random() * tweets.length)];
+  goToTweet(randomTweet.id);
 }
 
 function goToTweet(tweetId) {
@@ -976,7 +1091,21 @@ function runConfirm() {
 }
 
 window.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    toggleSearch();
+    return;
+  }
+  if (e.key === "/" && document.activeElement !== composerInput && document.activeElement !== searchInput && !editingTarget) {
+    e.preventDefault();
+    openSearch(true);
+    return;
+  }
   if (e.key === "Escape") {
+    if (isSearchOpen && document.activeElement === searchInput) {
+      searchInput.blur();
+      return;
+    }
     closeMoodMenus();
     closeConfirm();
     closeMenu();
@@ -1154,13 +1283,14 @@ function renderTagList() {
   tagList.classList.toggle("show", sorted.length > 0);
 }
 
-// 絞り込み中の条件（月・タグ）を、それぞれ ✕ で外せるチップで出す
+// 絞り込み中の条件（月・タグ・検索）を、それぞれ ✕ で外せるチップで出す
 function updateFilterBar() {
-  filterBar.classList.toggle("show", !!(tagFilter || monthFilter));
-  if (!tagFilter && !monthFilter) return;
+  filterBar.classList.toggle("show", !!(tagFilter || monthFilter || searchFilter));
+  if (!tagFilter && !monthFilter && !searchFilter) return;
   filterBar.innerHTML = `
     ${monthFilter ? `<button class="filter-chip" onclick="removeFilter('month')">${formatMonth(monthFilter)}<span class="filter-chip-x">✕</span></button>` : ""}
     ${tagFilter ? `<button class="filter-chip is-tag" onclick="removeFilter('tag')">#${escapeHtml(tagFilter)}<span class="filter-chip-x">✕</span></button>` : ""}
+    ${searchFilter ? `<button class="filter-chip is-search" onclick="removeFilter('search')">"${escapeHtml(searchFilter)}"<span class="filter-chip-x">✕</span></button>` : ""}
     <span class="tag-count">${tweets.filter(isVisibleInTimeline).length}</span>
   `;
 }
@@ -1387,8 +1517,20 @@ function buildTweetItemHtml(tweet) {
 // -------------------------------------------------------------
 // 描画
 // -------------------------------------------------------------
+function matchesSearch(tweet, q) {
+  if (!q) return true;
+  const lower = q.toLowerCase();
+  if (tweet.text && tweet.text.toLowerCase().includes(lower)) return true;
+  if (tweet.link?.title && tweet.link.title.toLowerCase().includes(lower)) return true;
+  if (tweet.quoted?.text && tweet.quoted.text.toLowerCase().includes(lower)) return true;
+  if (tweet.replies && tweet.replies.some((rep) => rep.text && rep.text.toLowerCase().includes(lower))) return true;
+  return false;
+}
+
 const isVisibleInTimeline = (tweet) =>
-  (!tagFilter || matchesTag(tweet, tagFilter)) && (!monthFilter || monthKey(new Date(tweet.createdAt)) === monthFilter);
+  (!tagFilter || matchesTag(tweet, tagFilter)) &&
+  (!monthFilter || monthKey(new Date(tweet.createdAt)) === monthFilter) &&
+  (!searchFilter || matchesSearch(tweet, searchFilter));
 
 function renderTimeline() {
   timelineStream.innerHTML = tweets.filter(isVisibleInTimeline).map(buildTweetItemHtml).join("");
@@ -1693,6 +1835,30 @@ function buildHeatYearHtml(year, days, now) {
   `;
 }
 
+function handleSharedTargetParams() {
+  try {
+    const urlObj = new URL(window.location.href);
+    const title = urlObj.searchParams.get("title");
+    const text = urlObj.searchParams.get("text");
+    const sharedUrl = urlObj.searchParams.get("url");
+    if (title || text || sharedUrl) {
+      const parts = [];
+      if (text) parts.push(text);
+      if (title && !text?.includes(title)) parts.push(title);
+      if (sharedUrl && !text?.includes(sharedUrl)) parts.push(sharedUrl);
+      const content = parts.join("\n\n");
+      if (content) {
+        composerInput.value = composerInput.value ? `${composerInput.value}\n\n${content}` : content;
+        syncHighlight();
+        handleInput();
+        setTimeout(() => composerInput.focus(), 150);
+      }
+      const cleanUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  } catch (e) {}
+}
+
 // -------------------------------------------------------------
 // 起動
 // -------------------------------------------------------------
@@ -1701,6 +1867,7 @@ async function init() {
   applyTranslations();
   renderTodayDate();
   initInstallHint();
+  handleSharedTargetParams();
 
   composerInput.addEventListener("focus", () => {
     document.body.classList.add("keyboard-open");
@@ -1720,6 +1887,14 @@ async function init() {
   renderComposerMood();
   handleRouting();
   window.addEventListener("hashchange", handleRouting);
+
+  if (window.location.hash === "#compose") {
+    window.location.hash = "";
+    setTimeout(() => {
+      composerInput.focus();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 100);
+  }
 
   // 日付をまたいで再開したら「今日」「昨日」の表示を描き直す
   document.addEventListener("visibilitychange", () => {

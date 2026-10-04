@@ -41,6 +41,9 @@
     </div>
 
     <div class="header-right">
+      <button class="header-icon-btn" id="btnSearch" onclick="toggleSearch()" aria-label="Search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+      </button>
       <button class="header-date" id="todayDateLabel" onclick="openArchive()"></button>
       <button class="header-icon-btn" onclick="openMenu()" aria-label="Menu">
         <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
@@ -51,13 +54,22 @@
   <!-- 1. メインタイムライン画面 -->
   <div class="view-timeline" id="viewTimeline">
 
+    <!-- 検索バー（ヘッダーの虫眼鏡または Cmd+K で表示） -->
+    <div class="search-bar" id="searchBar">
+      <div class="search-input-wrapper">
+        <svg class="search-input-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+        <input type="text" id="searchInput" class="search-input" oninput="handleSearchInput(this.value)" autocomplete="off" />
+        <button class="btn-clear-search" id="btnClearSearch" onclick="clearSearch()" aria-label="Clear">✕</button>
+      </div>
+    </div>
+
     <!-- iOS Safari のタブで開いた時だけ表示 -->
     <div class="install-hint" id="installHint">
       <span id="installHintText"></span>
       <button class="btn-cancel-quote" onclick="dismissInstallHint()" aria-label="Close">✕</button>
     </div>
 
-    <!-- 絞り込み中の条件（月・タグ。#month-<YYYY-MM>&tag-<tag>） -->
+    <!-- 絞り込み中の条件（月・タグ・検索。#month-<YYYY-MM>&tag-<tag>&q-<query>） -->
     <div class="filter-bar" id="filterBar"></div>
 
     <!-- 投稿フォーム -->
@@ -123,6 +135,7 @@
     <div class="confirm-dialog menu-dialog" onclick="event.stopPropagation()">
       <div class="tag-list" id="tagList"></div>
       <button class="menu-item" id="btnArchive" onclick="openArchive()"></button>
+      <button class="menu-item" id="btnRandom" onclick="openRandomTweet()"></button>
       <button class="menu-item" id="btnTheme" onclick="toggleTheme()"></button>
       <button class="menu-item" id="btnExport" onclick="exportData()"></button>
       <label class="menu-item" id="btnImport" for="importInput"></label>

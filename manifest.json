@@ -21,5 +21,30 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "残す",
+      "short_name": "残す",
+      "description": "思考の点を書き留める",
+      "url": "./#compose",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "振り返る",
+      "short_name": "振り返り",
+      "description": "過去の記録を草で振り返る",
+      "url": "./#archive",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "./",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }
