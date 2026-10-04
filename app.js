@@ -17,6 +17,7 @@ let activeReplyBoxId = null;
 let editingTarget = null; // { tweetId, replyId, text }（詳細画面で編集中の項目と入力途中の文）
 let tagFilter = null; // タイムラインを絞り込み中のタグ（#tag-<tag> のとき）
 let monthFilter = null; // タイムラインを絞り込み中の月 YYYY-MM（#month-<YYYY-MM> のとき）
+let pendingScroll = null; // 草から月を開いた直後のスクロール先: "top" か押した日 YYYY-MM-DD（URL には入れない）
 let autoTag = null; // { prefix, original } 絞り込み中に入力欄の先頭へ自動で入れたタグと、入れる前の文
 let confirmCallback = null;
 let renderedDayKey = "";
@@ -493,6 +494,9 @@ function handleRouting() {
   } else if (!wasTimeline) {
     window.scrollTo(0, timelineScrollY);
   }
+  if (pendingScroll === "top") window.scrollTo(0, 0);
+  else if (pendingScroll) scrollToDay(pendingScroll);
+  pendingScroll = null;
 }
 
 function goHome() {
@@ -1416,15 +1420,39 @@ function renderDetailView(tweetId) {
 // -------------------------------------------------------------
 // 振り返り（草）
 // GitHub の草を、スマホの幅に収まるよう「縦に月・横に日（1〜31）」に並べ替えて年ごとに出す。
-// 色はその日のポスト数（タグを選ぶとそのタグのポストだけ）。月の行をタップするとその月のタイムラインへ
+// 色はその日のポスト数（タグを選ぶとそのタグのポストだけ）。タップするとその月のタイムラインを、押した日の位置で開く
 // -------------------------------------------------------------
 function openArchive(tag = tagFilter) {
   closeMenu();
   navigate({ view: "archive", tag: tag || null });
 }
 
-function openMonth(month) {
+function openMonth(month, day = null) {
+  pendingScroll = day ? `${month}-${day}` : "top";
   navigate({ month, tag: parseRoute().tag });
+}
+
+// 月の行のタップ。マスは小さいので、押した位置に一番近い日を選ぶ（月名・件数のあたりなら月の先頭）
+function openHeatRow(event, month) {
+  let nearest = null;
+  for (const cell of event.currentTarget.querySelectorAll(".heat-cell[data-day]")) {
+    const rect = cell.getBoundingClientRect();
+    const distance = Math.abs(event.clientX - (rect.left + rect.width / 2));
+    if (!nearest || distance < nearest.distance) nearest = { day: cell.dataset.day, distance };
+  }
+  openMonth(month, nearest && nearest.distance < 12 ? nearest.day : null);
+}
+
+// その日（投稿がなければ、それより前で一番近い日）の最初のポストまでスクロールし、一瞬ハイライトする。
+// 画面外のポストは高さが見積もりなので、描画が落ち着いてからもう一度合わせる
+function scrollToDay(key) {
+  const items = [...timelineStream.children];
+  const target = items.find((el) => dayKey(new Date(findTweet(el.id).createdAt)) <= key) || items[items.length - 1];
+  if (!target) return;
+  target.scrollIntoView({ block: "start" });
+  requestAnimationFrame(() => requestAnimationFrame(() => target.scrollIntoView({ block: "start" })));
+  target.classList.add("is-target");
+  target.addEventListener("animationend", () => target.classList.remove("is-target"), { once: true });
 }
 
 const heatLevel = (count) => (count >= 5 ? 4 : count >= 3 ? 3 : count);
@@ -1474,12 +1502,12 @@ function buildHeatYearHtml(year, counts, now) {
       const count = counts.get(dayKey(date)) || 0;
       monthTotal += count;
       const classes = [`l${heatLevel(count)}`, date > now ? "is-future" : "", dayKey(date) === dayKey(now) ? "is-today" : ""].join(" ");
-      cells.push(`<span class="heat-cell ${classes}" title="${t("heat_cell_title", monthDayFormat.format(date), count)}"></span>`);
+      cells.push(`<span class="heat-cell ${classes}" data-day="${pad2(day)}" title="${t("heat_cell_title", monthDayFormat.format(date), count)}"></span>`);
     }
     yearTotal += monthTotal;
     const clickable = monthTotal > 0 && !isFutureMonth;
     rows.push(`
-      <div class="heat-row ${clickable ? "is-clickable" : ""}" ${clickable ? `onclick="openMonth('${key}')"` : ""}>
+      <div class="heat-row ${clickable ? "is-clickable" : ""}" ${clickable ? `onclick="openHeatRow(event, '${key}')"` : ""}>
         <span class="heat-month">${monthLabelFormat.format(new Date(year, month, 1))}</span>
         ${cells.join("")}
         <span class="heat-count">${monthTotal || ""}</span>
