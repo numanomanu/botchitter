@@ -19,7 +19,6 @@ let editingTarget = null; // { tweetId, replyId, text }（詳細画面で編集�
 let tagFilter = null; // タイムラインを絞り込み中のタグ（#tag-<tag> のとき）
 let monthFilter = null; // タイムラインを絞り込み中の月 YYYY-MM（#month-<YYYY-MM> のとき）
 let composerMood = null; // 入力欄で選んでいる気分（1〜5 / null）
-let archiveMode = "count"; // 草の色: "count"（ポスト数）か "mood"（その日の気分の平均）
 let pendingScroll = null; // 草から月を開いた直後のスクロール先: "top" か押した日 YYYY-MM-DD（URL には入れない）
 let autoTag = null; // { prefix, original } 絞り込み中に入力欄の先頭へ自動で入れたタグと、入れる前の文
 let confirmCallback = null;
@@ -83,14 +82,10 @@ const I18N = {
     theme_to_dark: "ダークモードにする",
     mood_add: "気分を付ける",
     archive_all: "すべて",
-    archive_mode_count: "量",
-    archive_mode_mood: "気分",
-    heat_less: "少",
-    heat_more: "多",
     mood_low: "沈",
     mood_high: "晴",
+    mood_none: "なし",
     heat_cell_title: (date, n) => `${date} ${n}件`,
-    heat_cell_title_mood: (date, n, avg) => `${date} ${n}件・気分 ${avg}`,
     mood_label: (m) => ["とても沈んでいる", "すこし沈んでいる", "ふつう", "すこし晴れやか", "とても晴れやか"][m - 1]
   },
   en: {
@@ -114,14 +109,10 @@ const I18N = {
     theme_to_dark: "Switch to dark mode",
     mood_add: "Add mood",
     archive_all: "All",
-    archive_mode_count: "Posts",
-    archive_mode_mood: "Mood",
-    heat_less: "Less",
-    heat_more: "More",
     mood_low: "Low",
     mood_high: "High",
+    mood_none: "None",
     heat_cell_title: (date, n) => `${date}: ${n}`,
-    heat_cell_title_mood: (date, n, avg) => `${date}: ${n}, mood ${avg}`,
     mood_label: (m) => ["Very low", "Low", "Neutral", "Good", "Great"][m - 1]
   }
 };
@@ -1512,8 +1503,8 @@ function renderDetailView(tweetId) {
 // -------------------------------------------------------------
 // 振り返り（草）
 // GitHub の草を、スマホの幅に収まるよう「縦に月・横に日（1〜31）」に並べ替えて年ごとに出す。
-// 色はその日のポスト数か、その日の気分の平均（切り替え）。タグを選ぶとそのタグのポストだけ。
-// タップするとその月のタイムラインを、押した日の位置で開く
+// 1日ごとに小さな棒を立て、高さがポスト数、帯の色が1件ずつの気分（下が朝・上が夜。平均しないので1日の浮き沈みも見える）。
+// タグを選ぶとそのタグのポストだけ。タップするとその月のタイムラインを、押した日の位置で開く
 // -------------------------------------------------------------
 function openArchive(tag = tagFilter) {
   closeMenu();
@@ -1528,7 +1519,7 @@ function openMonth(month, day = null) {
 // 月の行のタップ。マスは小さいので、押した位置に一番近い日を選ぶ（月名・件数のあたりなら月の先頭）
 function openHeatRow(event, month) {
   let nearest = null;
-  for (const cell of event.currentTarget.querySelectorAll(".heat-cell[data-day]")) {
+  for (const cell of event.currentTarget.querySelectorAll(".heat-day[data-day]")) {
     const rect = cell.getBoundingClientRect();
     const distance = Math.abs(event.clientX - (rect.left + rect.width / 2));
     if (!nearest || distance < nearest.distance) nearest = { day: cell.dataset.day, distance };
@@ -1548,25 +1539,16 @@ function scrollToDay(key) {
   target.addEventListener("animationend", () => target.classList.remove("is-target"), { once: true });
 }
 
-const heatLevel = (count) => (count >= 5 ? 4 : count >= 3 ? 3 : count);
-
-function setArchiveMode(mode) {
-  archiveMode = mode;
-  renderArchive(parseRoute().tag);
-}
+// これ以上の件数の日は棒の高さが上限のまま、1件ずつの帯が細くなる
+const BAR_MAX_POSTS = 6;
 
 function renderArchive(tag) {
-  const days = new Map(); // "YYYY-MM-DD" → { count, moodSum, moodCount }
-  for (const tweet of tweets) {
+  const days = new Map(); // "YYYY-MM-DD" → その日のポストの気分の並び（古い順。未設定は null）
+  for (const tweet of [...tweets].reverse()) {
     if (tag && !matchesTag(tweet, tag)) continue;
     const key = dayKey(new Date(tweet.createdAt));
-    const day = days.get(key) || { count: 0, moodSum: 0, moodCount: 0 };
-    day.count++;
-    if (tweet.mood) {
-      day.moodSum += tweet.mood;
-      day.moodCount++;
-    }
-    days.set(key, day);
+    if (!days.has(key)) days.set(key, []);
+    days.get(key).push(tweet.mood);
   }
 
   const now = new Date();
@@ -1579,36 +1561,24 @@ function renderArchive(tag) {
       ${chipTag ? `#${escapeHtml(chipTag)}` : t("archive_all")}<span class="tag-count">${count}</span>
     </button>
   `).join("");
-  const legend = archiveMode === "mood"
-    ? `${t("mood_low")}${[1, 2, 3, 4, 5].map((m) => `<span class="heat-cell m${m}"></span>`).join("")}${t("mood_high")}`
-    : `${t("heat_less")}${[0, 1, 2, 3, 4].map((level) => `<span class="heat-cell l${level}"></span>`).join("")}${t("heat_more")}`;
-  const modes = ["count", "mood"].map((mode) => `
-    <button class="mode-btn ${archiveMode === mode ? "is-active" : ""}" onclick="setArchiveMode('${mode}')">${t(`archive_mode_${mode}`)}</button>
-  `).join("");
+  const swatches = [1, 2, 3, 4, 5].map((m) => `<span class="heat-swatch m${m}"></span>`).join("");
 
   archiveContent.innerHTML = `
     <div class="archive-tags">${chips}</div>
-    <div class="archive-bar">
-      <div class="archive-mode">${modes}</div>
-      <div class="heat-legend">${legend}</div>
+    <div class="heat-legend">
+      ${t("mood_low")}${swatches}${t("mood_high")}
+      <span class="heat-swatch no-mood"></span>${t("mood_none")}
     </div>
     ${years.join("")}
   `;
 }
 
-// 気分モードでは、投稿はあるが気分の付いていない日は灰色（no-mood）
-function heatCellClass(day) {
-  if (!day) return "l0";
-  if (archiveMode === "count") return `l${heatLevel(day.count)}`;
-  return day.moodCount ? `m${Math.round(day.moodSum / day.moodCount)}` : "no-mood";
-}
-
-function heatCellTitle(date, day) {
-  const label = monthDayFormat.format(date);
-  if (archiveMode === "mood" && day?.moodCount) {
-    return t("heat_cell_title_mood", label, day.count, (day.moodSum / day.moodCount).toFixed(1));
-  }
-  return t("heat_cell_title", label, day?.count || 0);
+// その日の棒：高さがポスト数、帯の色が1件ずつの気分（下から古い順）
+function buildDayBarHtml(moods) {
+  if (!moods.length) return "";
+  const height = (Math.min(moods.length, BAR_MAX_POSTS) / BAR_MAX_POSTS) * 100;
+  const segments = moods.map((mood) => `<span class="${mood ? `m${mood}` : "no-mood"}"></span>`).join("");
+  return `<span class="heat-bar ${moods.length > BAR_MAX_POSTS ? "is-dense" : ""}" style="height: ${height}%">${segments}</span>`;
 }
 
 function buildHeatYearHtml(year, days, now) {
@@ -1622,14 +1592,14 @@ function buildHeatYearHtml(year, days, now) {
     const cells = [];
     for (let day = 1; day <= 31; day++) {
       if (day > daysInMonth) {
-        cells.push(`<span class="heat-cell is-void"></span>`);
+        cells.push(`<span class="heat-day is-void"></span>`);
         continue;
       }
       const date = new Date(year, month, day);
-      const stats = days.get(dayKey(date));
-      monthTotal += stats?.count || 0;
-      const classes = [heatCellClass(stats), date > now ? "is-future" : "", dayKey(date) === dayKey(now) ? "is-today" : ""].join(" ");
-      cells.push(`<span class="heat-cell ${classes}" data-day="${pad2(day)}" title="${heatCellTitle(date, stats)}"></span>`);
+      const moods = days.get(dayKey(date)) || [];
+      monthTotal += moods.length;
+      const classes = [date > now ? "is-future" : "", dayKey(date) === dayKey(now) ? "is-today" : ""].join(" ");
+      cells.push(`<span class="heat-day ${classes}" data-day="${pad2(day)}" title="${t("heat_cell_title", monthDayFormat.format(date), moods.length)}">${buildDayBarHtml(moods)}</span>`);
     }
     yearTotal += monthTotal;
     const clickable = monthTotal > 0 && !isFutureMonth;
