@@ -1,7 +1,7 @@
 {
-  "name": "botchitter — 一人Twitter",
+  "name": "botchitter — 自分にしか見えないタイムライン",
   "short_name": "botchitter",
-  "description": "今を観る。点を残す。いつか線になる。思考のログを残す一人Twitter",
+  "description": "自分にしか見えないタイムライン。自分が主役で、誰も邪魔しない、思考と感情を淡々と残す場所。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
