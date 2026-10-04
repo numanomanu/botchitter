@@ -58,7 +58,7 @@
     <div class="search-bar" id="searchBar">
       <div class="search-input-wrapper">
         <svg class="search-input-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-        <input type="text" id="searchInput" class="search-input" oninput="handleSearchInput(this.value)" onkeydown="handleSearchKeydown(event)" autocomplete="off" />
+        <input type="text" id="searchInput" class="search-input" oninput="handleSearchInput(this.value)" onkeydown="handleSearchKeydown(event)" oncompositionstart="handleSearchCompositionStart()" oncompositionend="handleSearchCompositionEnd()" autocomplete="off" />
         <button class="btn-clear-search" id="btnClearSearch" onclick="clearSearch()" aria-label="Clear">✕</button>
       </div>
     </div>

@@ -617,8 +617,20 @@ function clearSearch() {
 }
 
 let searchInputTimer = null;
+let isSearchComposing = false;
+
+function handleSearchCompositionStart() {
+  isSearchComposing = true;
+}
+
+function handleSearchCompositionEnd() {
+  isSearchComposing = false;
+  handleSearchInput(searchInput.value);
+}
+
 function handleSearchInput(val) {
   if (btnClearSearch) btnClearSearch.classList.toggle("show", !!val);
+  if (isSearchComposing) return;
   clearTimeout(searchInputTimer);
   searchInputTimer = setTimeout(() => {
     const q = val.trim() || null;
@@ -631,6 +643,7 @@ function handleSearchInput(val) {
 
 function handleSearchKeydown(e) {
   if (e.key === "Enter") {
+    if (e.isComposing || e.keyCode === 229 || isSearchComposing) return;
     e.preventDefault();
     clearTimeout(searchInputTimer);
     const q = (searchInput?.value || "").trim() || null;
@@ -651,7 +664,7 @@ function syncSearchUi() {
     isSearchOpen = true;
     searchBar.classList.add("show");
     if (btnSearch) btnSearch.classList.add("active");
-    if (searchInput.value !== searchFilter) {
+    if (document.activeElement !== searchInput && searchInput.value !== searchFilter) {
       searchInput.value = searchFilter;
     }
     if (btnClearSearch) btnClearSearch.classList.add("show");
