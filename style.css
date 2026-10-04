@@ -202,11 +202,30 @@
   }
 
   .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.06em;
     color: var(--text-primary);
     cursor: pointer;
+    user-select: none;
+  }
+  .logo-mark {
+    width: auto;
+    height: 18px;
+    color: var(--text-primary);
+    opacity: 0.82;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s ease;
+    flex-shrink: 0;
+  }
+  .logo:hover .logo-mark {
+    opacity: 1;
+    transform: rotate(-6deg) scale(1.05);
+  }
+  .logo:active .logo-mark {
+    transform: scale(0.92);
   }
 
   .header-date {

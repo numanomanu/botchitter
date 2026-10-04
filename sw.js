@@ -14,7 +14,8 @@ const ASSETS = [
   "manifest.json",
   "icon-192.png",
   "icon-512.png",
-  "apple-touch-icon.png"
+  "apple-touch-icon.png",
+  "botchi.svg"
 ];
 
 // インストール時にコア資産をプリキャッシュ
