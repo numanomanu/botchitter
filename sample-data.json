@@ -1,44 +1,605 @@
 {
   "app": "botchitter",
   "version": 1,
-  "exportedAt": 1791109887383,
+  "exportedAt": 1791110116532,
   "tweets": [
     {
-      "id": "tw-1791104400000-1035",
-      "createdAt": 1791104400000,
-      "text": "日曜日も終わり。明日からの一週間も無理せずマイペースでいこう。 #日常 #思考",
+      "id": "tw-dense-1791109800000-2086",
+      "createdAt": 1791109800000,
+      "text": "日曜日も終わり。今週も自分のペースで楽しもう。 #思考 #生活",
       "mood": 4,
       "targetQuoteId": null,
       "quoted": null,
       "replies": []
     },
     {
-      "id": "tw-1791086400000-1033",
-      "createdAt": 1791086400000,
-      "text": "直近2週間のポコポコアニメーション、雨粒みたいにバラバラ降ってきてとても心地よいリズムになった！ #開発 #生活",
-      "mood": 5,
+      "id": "tw-dense-1791104400000-2085",
+      "createdAt": 1791104400000,
+      "text": "サンプルデータを作ってアニメーションを検証中。 #開発",
+      "mood": 4,
       "targetQuoteId": null,
       "quoted": null,
-      "replies": [
-        {
-          "id": "rep-1791087000000-1034",
-          "createdAt": 1791087000000,
-          "text": "草ヒートマップを眺めているだけでも自分の歩みが感じられて楽しい。"
-        }
-      ]
+      "replies": []
     },
     {
-      "id": "tw-1791019200000-1032",
-      "createdAt": 1791019200000,
-      "text": "夜の振り返り。読書と開発の両方が捗った充実した土曜日だった。 #読書 #開発",
+      "id": "tw-dense-1791098400000-2084",
+      "createdAt": 1791098400000,
+      "text": "積み上がる動きがめちゃくちゃ気持ちいい！ #開発 #生活",
       "mood": 5,
       "targetQuoteId": null,
       "quoted": null,
       "replies": []
     },
     {
-      "id": "tw-1790992800000-1031",
-      "createdAt": 1790992800000,
+      "id": "tw-dense-1791090000000-2083",
+      "createdAt": 1791090000000,
+      "text": "1つ1つの投稿が独立して落ちてくる仕様に変更。 #開発",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1791081000000-2082",
+      "createdAt": 1791081000000,
+      "text": "雨粒ポコポコアニメーションの実装！ #開発",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1791072000000-2081",
+      "createdAt": 1791072000000,
+      "text": "日曜日の静かな午前中。 #生活",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1791032400000-2080",
+      "createdAt": 1791032400000,
+      "text": "充実した休日だった。記録をつけて就寝。 #思考",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1791023400000-2079",
+      "createdAt": 1791023400000,
+      "text": "美味しい夕食。家族と団欒。 #生活",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1791014400000-2078",
+      "createdAt": 1791014400000,
+      "text": "雨粒アニメーションのアイデアを練る。 #開発 #アイデア",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1791006300000-2077",
+      "createdAt": 1791006300000,
+      "text": "古本屋で素敵なエッセイを見つけた。 #読書",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790998200000-2076",
+      "createdAt": 1790998200000,
+      "text": "タグのスクロールUIを調整。横スクロールが快適。 #開発",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790990100000-2075",
+      "createdAt": 1790990100000,
+      "text": "朝食後にドリップコーヒー。いい香り。 #生活",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790983800000-2074",
+      "createdAt": 1790983800000,
+      "text": "土曜日の澄んだ朝。早朝ウォーキング。 #散歩",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790946900000-2073",
+      "createdAt": 1790946900000,
+      "text": "今週もお疲れ様でした。 #生活",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790931600000-2072",
+      "createdAt": 1790931600000,
+      "text": "修正完了してスッキリ。金曜日の開放感！ #開発",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790922000000-2071",
+      "createdAt": 1790922000000,
+      "text": "原因判明！思わぬエッジケースだった。 #開発",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790910000000-2070",
+      "createdAt": 1790910000000,
+      "text": "ちょっと複雑なバグ調査。原因を切り分け中。 #開発",
+      "mood": 2,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790901000000-2069",
+      "createdAt": 1790901000000,
+      "text": "少し曇り空。マイペースでいこう。 #日常",
+      "mood": 3,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790856000000-2068",
+      "createdAt": 1790856000000,
+      "text": "初日は上々の滑り出し。 #思考",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790842500000-2067",
+      "createdAt": 1790842500000,
+      "text": "秋風が心地よくて遠回りして帰宅。 #散歩",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790830800000-2066",
+      "createdAt": 1790830800000,
+      "text": "新しい機能のプロトタイプ作成。 #開発 #アイデア",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790821800000-2065",
+      "createdAt": 1790821800000,
+      "text": "月初めのタスク整理。 #日常",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790811900000-2064",
+      "createdAt": 1790811900000,
+      "text": "10月スタート！新しい手帳をおろした。 #生活",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790771400000-2063",
+      "createdAt": 1790771400000,
+      "text": "9月も終わり。来月も良い月にしよう。 #思考 #生活",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790759700000-2062",
+      "createdAt": 1790759700000,
+      "text": "9月の目標全達成！よく頑張った。 #思考",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790753400000-2061",
+      "createdAt": 1790753400000,
+      "text": "気になっていたバグをついに撃退！爽快。 #開発",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790747100000-2060",
+      "createdAt": 1790747100000,
+      "text": "ちょっと一息。コーヒーブレイク。 #日常",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790740800000-2059",
+      "createdAt": 1790740800000,
+      "text": "ランチに美味しいカレーを食べた。 #生活",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790734500000-2058",
+      "createdAt": 1790734500000,
+      "text": "PWAのキャッシュ設計をさらに最適化。 #開発",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790728200000-2057",
+      "createdAt": 1790728200000,
+      "text": "午前中のタスク消化が驚くほどスムーズ。 #開発",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790721900000-2056",
+      "createdAt": 1790721900000,
+      "text": "9月最終日！気合を入れて早起き。 #生活",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790679600000-2055",
+      "createdAt": 1790679600000,
+      "text": "本を1冊読み終えた。満足感。 #読書",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790664300000-2054",
+      "createdAt": 1790664300000,
+      "text": "新しいアイデアをメモしておく。 #アイデア",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790651700000-2053",
+      "createdAt": 1790651700000,
+      "text": "午後の予定を確認。 #日常",
+      "mood": 3,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790640000000-2052",
+      "createdAt": 1790640000000,
+      "text": "雨上がりの澄んだ空気。 #散歩",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790601300000-2051",
+      "createdAt": 1790601300000,
+      "text": "温かいハーブティーで一息。 #生活",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790589000000-2050",
+      "createdAt": 1790589000000,
+      "text": "実装完了！期待通りに動いた。 #開発",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790579700000-2049",
+      "createdAt": 1790579700000,
+      "text": "ちょっとした壁にぶつかるも解決の糸口が見えた。 #開発",
+      "mood": 3,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790569800000-2048",
+      "createdAt": 1790569800000,
+      "text": "設計の見直し。シンプルが一番強い。 #思考 #開発",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790559900000-2047",
+      "createdAt": 1790559900000,
+      "text": "雨が降ってきた。雨音は集中できる。 #生活",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790551800000-2046",
+      "createdAt": 1790551800000,
+      "text": "月曜のスタート。深呼吸。 #日常",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790509500000-2045",
+      "createdAt": 1790509500000,
+      "text": "今週の振り返り完了。いいペース。 #思考",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790496000000-2044",
+      "createdAt": 1790496000000,
+      "text": "散歩中に秋の花を見つけた。 #散歩",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790486100000-2043",
+      "createdAt": 1790486100000,
+      "text": "UIのマイクロアニメーションについて考える。 #開発 #アイデア",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790474400000-2042",
+      "createdAt": 1790474400000,
+      "text": "日曜日。部屋の空気を入れ替える。 #生活",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790425800000-2041",
+      "createdAt": 1790425800000,
+      "text": "夜ののんびりタイム。 #日常",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790413200000-2040",
+      "createdAt": 1790413200000,
+      "text": "夕暮れの空が茜色で美しかった。 #散歩",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790404200000-2039",
+      "createdAt": 1790404200000,
+      "text": "読書。思考のヒントがたくさん詰まっている。 #読書",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790394300000-2038",
+      "createdAt": 1790394300000,
+      "text": "新しいカフェを開拓。深煎りコーヒーが美味。 #生活",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790384400000-2037",
+      "createdAt": 1790384400000,
+      "text": "土曜日の朝。掃除と洗濯を一気に片付け。 #生活",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790333100000-2036",
+      "createdAt": 1790333100000,
+      "text": "金曜夜！無理せず定時で終了。 #生活",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790319600000-2035",
+      "createdAt": 1790319600000,
+      "text": "集中力が途切れたので少し散歩。 #散歩",
+      "mood": 3,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790307000000-2034",
+      "createdAt": 1790307000000,
+      "text": "温かいスープを飲んで温まる。 #生活",
+      "mood": 3,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790295300000-2033",
+      "createdAt": 1790295300000,
+      "text": "ちょっと雨模様。少し肌寒い。 #日常",
+      "mood": 2,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790256600000-2032",
+      "createdAt": 1790256600000,
+      "text": "充実した開発デーだった。おやすみ。 #日常",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790240400000-2031",
+      "createdAt": 1790240400000,
+      "text": "一気にコードベースがスッキリした。達成感。 #開発",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790231400000-2030",
+      "createdAt": 1790231400000,
+      "text": "CSSも整理すると見通しが全然違う。 #開発",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790222400000-2029",
+      "createdAt": 1790222400000,
+      "text": "ファイル分割が綺麗にハマった！ #開発",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790213400000-2028",
+      "createdAt": 1790213400000,
+      "text": "コードのリファクタリング開始。 #開発",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790207100000-2027",
+      "createdAt": 1790207100000,
+      "text": "連休明け。エンジンかけていこう。 #日常",
+      "mood": 3,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790165700000-2026",
+      "createdAt": 1790165700000,
+      "text": "穏やかな休日だった。 #生活",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790143200000-2025",
+      "createdAt": 1790143200000,
+      "text": "気になっていた映画を観た。余韻が残る。 #日常",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790127000000-2024",
+      "createdAt": 1790127000000,
+      "text": "祝日の朝。ゆっくり起きて朝食。 #生活",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790076600000-2023",
+      "createdAt": 1790076600000,
+      "text": "頭の整理完了。明日やることメモ。 #思考",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790062800000-2022",
+      "createdAt": 1790062800000,
+      "text": "新しいライブラリのドキュメントを読む。 #開発",
+      "mood": 3,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790050500000-2021",
+      "createdAt": 1790050500000,
+      "text": "ランチ後の散歩。木漏れ日が綺麗。 #散歩",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1790035200000-2020",
+      "createdAt": 1790035200000,
       "text": "秋晴れ。風が涼しくて歩きやすい。 #散歩",
       "mood": 5,
       "targetQuoteId": null,
@@ -46,262 +607,175 @@
       "replies": []
     },
     {
-      "id": "tw-1790926200000-1029",
-      "createdAt": 1790926200000,
-      "text": "思わぬ仕様の穴を見つけて少し悩む。一息入れてからやり直そう。 #開発",
-      "mood": 2,
-      "targetQuoteId": null,
-      "quoted": null,
-      "replies": [
-        {
-          "id": "rep-1790928900000-1030",
-          "createdAt": 1790928900000,
-          "text": "方針を変えたらあっさり解決した。柔軟さが大事。"
-        }
-      ]
-    },
-    {
-      "id": "tw-1790816400000-1028",
-      "createdAt": 1790816400000,
-      "text": "10月スタート！カレンダーをめくって今月の目標を1つだけ決めた。 #生活 #思考",
+      "id": "tw-dense-1789995600000-2019",
+      "createdAt": 1789995600000,
+      "text": "読書タイム。いいフレーズに出会えた。 #読書",
       "mood": 4,
       "targetQuoteId": null,
       "quoted": null,
       "replies": []
     },
     {
-      "id": "tw-1790774100000-1027",
-      "createdAt": 1790774100000,
-      "text": "9月終了。振り返ると小さな積み重ねがちゃんと進んでいるのを感じる。 #思考",
-      "mood": 4,
-      "targetQuoteId": null,
-      "quoted": null,
-      "replies": []
-    },
-    {
-      "id": "tw-1790668800000-1026",
-      "createdAt": 1790668800000,
-      "text": "夕焼けのグラデーションがすごく綺麗だった。立ち止まって写真を撮る。 #散歩 #生活",
+      "id": "tw-dense-1789981800000-2018",
+      "createdAt": 1789981800000,
+      "text": "今日の目標達成！夕飯何にしよう。 #生活",
       "mood": 5,
       "targetQuoteId": null,
       "quoted": null,
       "replies": []
     },
     {
-      "id": "tw-1790596200000-1025",
-      "createdAt": 1790596200000,
-      "text": "雨の音を聞きながら作業。静かな夜。 #日常 #生活",
+      "id": "tw-dense-1789968000000-2017",
+      "createdAt": 1789968000000,
+      "text": "少し眠気。軽くストレッチしてリフレッシュ。 #日常",
       "mood": 3,
       "targetQuoteId": null,
       "quoted": null,
       "replies": []
     },
     {
-      "id": "tw-1790475600000-1024",
-      "createdAt": 1790475600000,
-      "text": "PWAのService Workerキャッシュ挙動を整理。オフラインでも動くのはやっぱり安心感がある。 #開発",
+      "id": "tw-dense-1789958700000-2016",
+      "createdAt": 1789958700000,
+      "text": "タスクの整理。優先順位をつけて1つずつ。 #開発",
       "mood": 4,
       "targetQuoteId": null,
       "quoted": null,
       "replies": []
     },
     {
-      "id": "tw-1790399700000-1023",
-      "createdAt": 1790399700000,
-      "text": "気になっていた喫茶店へ。静かなBGMと深煎り珈琲で思考が深まる。 #生活 #読書",
+      "id": "tw-dense-1789947000000-2015",
+      "createdAt": 1789947000000,
+      "text": "週の始まり。朝のコーヒーが美味しい。 #生活",
       "mood": 4,
       "targetQuoteId": null,
       "quoted": null,
       "replies": []
     },
     {
-      "id": "tw-1790332800000-1022",
-      "createdAt": 1790332800000,
-      "text": "今日はなんとなく頭が働かず、進捗があまり出なかった日。そういう日もある。 #日常",
+      "id": "tw-dense-1788490800000-2014",
+      "createdAt": 1788490800000,
+      "text": "1か月前の今日。9月の計画を立てる。 #アイデア",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1786361400000-2013",
+      "createdAt": 1786361400000,
+      "text": "夜風に少しだけ秋の気配。 #散歩",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1784534400000-2012",
+      "createdAt": 1784534400000,
+      "text": "夏の夕暮れ。アイスがおいしい。 #生活",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1781946000000-2011",
+      "createdAt": 1781946000000,
+      "text": "梅雨の晴れ間。夕焼けが綺麗だった。 #日常",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1777788000000-2010",
+      "createdAt": 1777788000000,
+      "text": "連休の贅沢な時間。部屋の模様替えをした。 #生活",
+      "mood": 5,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1776247200000-2009",
+      "createdAt": 1776247200000,
+      "text": "少し疲れた日。無理せず早めに休む。 #日常",
       "mood": 2,
       "targetQuoteId": null,
       "quoted": null,
       "replies": []
     },
     {
-      "id": "tw-1790229600000-1020",
-      "createdAt": 1790229600000,
-      "text": "モジュール分割のリファクタリング。ファイルごとの責務がクリアになってすっきりした！ #開発",
-      "mood": 5,
-      "targetQuoteId": null,
-      "quoted": null,
-      "replies": [
-        {
-          "id": "rep-1790230200000-1021",
-          "createdAt": 1790230200000,
-          "text": "CSSも一緒に分けたから探す手間がなくなった。"
-        }
-      ]
-    },
-    {
-      "id": "tw-1790037000000-1019",
-      "createdAt": 1790037000000,
-      "text": "朝散歩で公園を一周。空が高くなって秋晴れが気持ちいい。 #散歩",
+      "id": "tw-dense-1773981000000-2008",
+      "createdAt": 1773981000000,
+      "text": "春の風。近所の公園で読書。 #読書 #散歩",
       "mood": 5,
       "targetQuoteId": null,
       "quoted": null,
       "replies": []
     },
     {
-      "id": "tw-1789196400000-1018",
-      "createdAt": 1789196400000,
-      "text": "集中してコードを書いた一日。頭の中のアイデアが形になっていく瞬間が一番楽しい。 #開発 #アイデア",
+      "id": "tw-dense-1771052400000-2007",
+      "createdAt": 1771052400000,
+      "text": "技術書のまとめ。手を動かしながら覚えるのが一番身につく。 #開発 #読書",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1767405600000-2006",
+      "createdAt": 1767405600000,
+      "text": "年始の散歩。新しい1年、無理のない目標でいこう。 #思考",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1766660400000-2005",
+      "createdAt": 1766660400000,
+      "text": "静かなクリスマス。温かいスープを作ってゆっくり過ごした。 #生活",
+      "mood": 4,
+      "targetQuoteId": null,
+      "quoted": null,
+      "replies": []
+    },
+    {
+      "id": "tw-dense-1763182800000-2004",
+      "createdAt": 1763182800000,
+      "text": "銀杏並木の黄色が鮮やか。秋の深まりを感じる。 #散歩",
       "mood": 5,
       "targetQuoteId": null,
       "quoted": null,
       "replies": []
     },
     {
-      "id": "tw-1788492600000-1016",
-      "createdAt": 1788492600000,
-      "text": "9月に入って少し涼しくなった。秋に向けて新しく学びたいことのリストを整理。 #アイデア #思考",
-      "mood": 4,
-      "targetQuoteId": null,
-      "quoted": null,
-      "replies": [
-        {
-          "id": "rep-1788492900000-1017",
-          "createdAt": 1788492900000,
-          "text": "まずは気になっていた本の消化から。"
-        }
-      ]
-    },
-    {
-      "id": "tw-1786795800000-1015",
-      "createdAt": 1786795800000,
-      "text": "夜風に秋の気配が混ざってきた。今年の夏もあっという間だったな。 #散歩 #思考",
+      "id": "tw-dense-1759579200000-2003",
+      "createdAt": 1759579200000,
+      "text": "初日の記録終わり。書くだけで頭が整理される感じがする。 #生活",
       "mood": 4,
       "targetQuoteId": null,
       "quoted": null,
       "replies": []
     },
     {
-      "id": "tw-1784969400000-1014",
-      "createdAt": 1784969400000,
-      "text": "本格的な夏。夕方の風が少しだけ心地いい。アイスを買って帰る。 #日常",
-      "mood": 4,
-      "targetQuoteId": null,
-      "quoted": null,
-      "replies": []
-    },
-    {
-      "id": "tw-1781774400000-1013",
-      "createdAt": 1781774400000,
-      "text": "雨続きで気分が少し沈みがち。好きな音楽を流しながら部屋の掃除をした。 #生活",
-      "mood": 2,
-      "targetQuoteId": null,
-      "quoted": null,
-      "replies": []
-    },
-    {
-      "id": "tw-1777871400000-1012",
-      "createdAt": 1777871400000,
-      "text": "連休の午後、豆からコーヒーを淹れてのんびり読書。こういう時間が一番満たされる。 #読書 #生活",
+      "id": "tw-dense-1759555800000-2002",
+      "createdAt": 1759555800000,
+      "text": "散歩しながらこれからの目標について考えた。 #散歩",
       "mood": 5,
       "targetQuoteId": null,
       "quoted": null,
       "replies": []
     },
     {
-      "id": "tw-1775818800000-1011",
-      "createdAt": 1775818800000,
-      "text": "桜が散り始めて緑が濃くなってきた。年度初めのバタバタもようやく一段落。 #日常",
-      "mood": 3,
-      "targetQuoteId": null,
-      "quoted": null,
-      "replies": []
-    },
-    {
-      "id": "tw-1774068300000-1010",
-      "createdAt": 1774068300000,
-      "text": "春分。ベランダの植物から小さな新芽が出ていた。季節が巡っているのを感じる。 #生活",
-      "mood": 5,
-      "targetQuoteId": null,
-      "quoted": null,
-      "replies": []
-    },
-    {
-      "id": "tw-1771050600000-1009",
-      "createdAt": 1771050600000,
-      "text": "新しいWeb技術のキャッチアップ。ブラウザ標準機能だけでも想像以上に色んなことができる。 #開発",
-      "mood": 4,
-      "targetQuoteId": null,
-      "quoted": null,
-      "replies": []
-    },
-    {
-      "id": "tw-1768183200000-1008",
-      "createdAt": 1768183200000,
-      "text": "冬の朝の冷たい空気が気持ちいい。近所の神社までウォーキング。 #散歩",
-      "mood": 4,
-      "targetQuoteId": null,
-      "quoted": null,
-      "replies": []
-    },
-    {
-      "id": "tw-1767190200000-1007",
-      "createdAt": 1767190200000,
-      "text": "大晦日。色々あった1年だったけれど、健康で穏やかに年を越せそう。来年も自分のペースで。 #思考",
-      "mood": 5,
-      "targetQuoteId": null,
-      "quoted": null,
-      "replies": []
-    },
-    {
-      "id": "tw-1765188900000-1006",
-      "createdAt": 1765188900000,
-      "text": "今年やってよかったこと・手放してよかったことを箇条書きで整理。余白を作るのが大事。 #思考 #生活",
-      "mood": 4,
-      "targetQuoteId": null,
-      "quoted": null,
-      "replies": []
-    },
-    {
-      "id": "tw-1763641800000-1005",
-      "createdAt": 1763641800000,
-      "text": "仕事でいろいろ重なって疲労気味。今日は早めにお風呂入って寝よう。 #生活",
-      "mood": 2,
-      "targetQuoteId": null,
-      "quoted": null,
-      "replies": []
-    },
-    {
-      "id": "tw-1762147200000-1004",
-      "createdAt": 1762147200000,
-      "text": "久しぶりに古本屋を巡って気になった本を3冊購入。紙の匂いと静けさが落ち着く。 #読書",
-      "mood": 4,
-      "targetQuoteId": null,
-      "quoted": null,
-      "replies": []
-    },
-    {
-      "id": "tw-1760773200000-1003",
-      "createdAt": 1760773200000,
-      "text": "散歩の途中で見かけた金木犀の香りがふわりと香ってきた。秋のこの短い季節が好きだ。 #散歩 #生活",
-      "mood": 5,
-      "targetQuoteId": null,
-      "quoted": null,
-      "replies": []
-    },
-    {
-      "id": "tw-1759540500000-1001",
+      "id": "tw-dense-1759540500000-2001",
       "createdAt": 1759540500000,
       "text": "今日から botchitter を使い始めてみる。誰にも見られないからこそ、素直な思考や感情を残していこう。 #はじめに #思考",
       "mood": 4,
       "targetQuoteId": null,
       "quoted": null,
-      "replies": [
-        {
-          "id": "rep-1759540800000-1002",
-          "createdAt": 1759540800000,
-          "text": "日々のちょっとしたつぶやきも溜まれば自分の歴史になるはず。"
-        }
-      ]
+      "replies": []
     }
   ]
 }
