@@ -253,7 +253,7 @@ function toggleSearch() {
     openSearch(true);
     return;
   }
-  if (isSearchOpen) {
+  if (isSearchOpen && document.activeElement === searchInput) {
     closeSearch();
   } else {
     openSearch(true);
@@ -269,10 +269,14 @@ function openSearch(focus = true) {
   if (searchBar) searchBar.classList.add("show");
   if (btnSearch) btnSearch.classList.add("active");
   if (focus && searchInput) {
+    searchInput.focus();
+    try { searchInput.select(); } catch (e) {}
+    requestAnimationFrame(() => {
+      searchInput.focus();
+    });
     setTimeout(() => {
       searchInput.focus();
-      searchInput.select();
-    }, 10);
+    }, 40);
   }
 }
 
@@ -1415,19 +1419,6 @@ function renderDetailView(tweetId) {
       ${isEditingPost ? "" : `<div class="tweet-footer">${buildPostActionsHtml(id, true)}</div>`}
     </article>
 
-    <nav class="detail-nav" aria-label="Post navigation">
-      ${olderTweet ? `
-        <button class="btn-detail-nav prev" onclick="goToTweet('${olderTweet.id}')" title="${t("nav_prev")}">
-          ${ICONS.arrowLeft}<span>${t("nav_prev")}</span>
-        </button>
-      ` : `<span class="detail-nav-placeholder"></span>`}
-      ${newerTweet ? `
-        <button class="btn-detail-nav next" onclick="goToTweet('${newerTweet.id}')" title="${t("nav_next")}">
-          <span>${t("nav_next")}</span>${ICONS.arrowRight}
-        </button>
-      ` : `<span class="detail-nav-placeholder"></span>`}
-    </nav>
-
     ${replyCount ? `<div class="detail-section-title">${ICONS.comment}<span>${replyCount}</span></div>` : ""}
     ${buildRepliesThreadHtml(tweet, true)}
 
@@ -1459,6 +1450,19 @@ function renderDetailView(tweetId) {
         `).join("")}
       </div>
     ` : ""}
+
+    <nav class="detail-nav" aria-label="Post navigation">
+      ${olderTweet ? `
+        <button class="btn-detail-nav prev" onclick="goToTweet('${olderTweet.id}')" title="${t("nav_prev")}">
+          ${ICONS.arrowLeft}<span>${t("nav_prev")}</span>
+        </button>
+      ` : `<span class="detail-nav-placeholder"></span>`}
+      ${newerTweet ? `
+        <button class="btn-detail-nav next" onclick="goToTweet('${newerTweet.id}')" title="${t("nav_next")}">
+          <span>${t("nav_next")}</span>${ICONS.arrowRight}
+        </button>
+      ` : `<span class="detail-nav-placeholder"></span>`}
+    </nav>
   `;
 
   const detailInput = $("detail-reply-input");

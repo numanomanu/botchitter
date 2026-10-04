@@ -53,8 +53,8 @@ const I18N = {
     search_placeholder: "過去の記録を検索…",
     search_empty: "該当する記録は見つかりませんでした",
     btn_clear_search: "検索を解除",
-    nav_prev: "前の投稿",
-    nav_next: "次の投稿"
+    nav_prev: "前",
+    nav_next: "次"
   },
   en: {
     placeholder_default: "What did you feel today?",
@@ -92,7 +92,7 @@ const I18N = {
     search_placeholder: "Search past notes...",
     search_empty: "No matching notes found",
     btn_clear_search: "Clear search",
-    nav_prev: "Previous",
+    nav_prev: "Prev",
     nav_next: "Next"
   }
 };

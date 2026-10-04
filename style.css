@@ -1746,28 +1746,29 @@
     border-bottom: none;
   }
 
-  /* 詳細画面の前後投稿ナビゲーション */
+  /* 詳細画面の最下部の前後ナビゲーション（さりげなく配置） */
   .detail-nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 12px;
-    margin: 16px 0 24px;
+    margin: 36px 0 20px;
     padding-top: 14px;
     border-top: 1px solid var(--line);
   }
   .btn-detail-nav {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     background: none;
     border: none;
-    color: var(--text-secondary);
-    font-size: 13px;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    letter-spacing: 0.02em;
     cursor: pointer;
     font-family: inherit;
-    padding: 6px 10px;
-    border-radius: 8px;
+    padding: 4px 8px;
+    border-radius: 6px;
     transition: color 0.15s, background 0.15s;
   }
   .btn-detail-nav:hover {
@@ -1775,8 +1776,8 @@
     background: var(--hover-overlay);
   }
   .btn-detail-nav svg {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     stroke: currentColor;
     stroke-width: 2;
     fill: none;
