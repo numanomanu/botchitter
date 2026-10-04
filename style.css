@@ -1764,8 +1764,7 @@
   }
 
   /* 日付ラインの直前にある投稿の下のラインを消す */
-  .tweet-item:has(+ .timeline-day-divider),
-  .tweet-item.no-border-bottom {
+  .tweet-item:has(+ .timeline-day-divider) {
     border-bottom: none;
   }
 

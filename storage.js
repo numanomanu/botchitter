@@ -135,7 +135,7 @@ function normalizeTweets(raw) {
     .filter((tw) => tw && isValidId(tw.id) && typeof tw.text === "string")
     .map((tw) => ({
       ...normalizeEntry(tw),
-      mood: (typeof isMood === "function" ? isMood(tw.mood) : [1, 2, 3, 4, 5].includes(tw.mood)) ? tw.mood : null,
+      mood: isMood(tw.mood) ? tw.mood : null,
       targetQuoteId: isValidId(tw.targetQuoteId) ? tw.targetQuoteId : null,
       quoted: typeof tw.quoted?.text === "string" ? { createdAt: tw.quoted.createdAt || null, text: tw.quoted.text } : null,
       replies: (Array.isArray(tw.replies) ? tw.replies : [])
@@ -158,9 +158,9 @@ function normalizeTweets(raw) {
 function mergeTweets(incoming) {
   let added = 0;
   for (const tw of incoming) {
-    const existing = (typeof findTweet === "function") ? findTweet(tw.id) : (typeof tweets !== "undefined" ? tweets.find((t) => t.id === tw.id) : null);
+    const existing = findTweet(tw.id);
     if (!existing) {
-      if (typeof tweets !== "undefined") tweets.push(tw);
+      tweets.push(tw);
       added += 1 + tw.replies.length;
       continue;
     }
@@ -171,7 +171,7 @@ function mergeTweets(incoming) {
     }
     existing.replies.sort((a, b) => a.createdAt - b.createdAt);
   }
-  if (typeof tweets !== "undefined") tweets.sort((a, b) => b.createdAt - a.createdAt);
+  tweets.sort((a, b) => b.createdAt - a.createdAt);
   return added;
 }
 
@@ -179,9 +179,9 @@ function mergeTweets(incoming) {
 // バックアップ（書き出し / 読み込み）
 // -------------------------------------------------------------
 async function exportData() {
-  if (typeof closeMenu === "function") closeMenu();
-  const json = JSON.stringify({ app: "botchitter", version: 1, exportedAt: Date.now(), tweets: typeof tweets !== "undefined" ? tweets : [] }, null, 2);
-  const file = new File([json], `botchitter-${typeof dayKey === "function" ? dayKey(new Date()) : new Date().toISOString().slice(0, 10)}.json`, { type: "application/json" });
+  closeMenu();
+  const json = JSON.stringify({ app: "botchitter", version: 1, exportedAt: Date.now(), tweets }, null, 2);
+  const file = new File([json], `botchitter-${dayKey(new Date())}.json`, { type: "application/json" });
 
   // スマホは共有シート（iOS なら「"ファイル"に保存」）、それ以外は通常のダウンロード
   if (window.matchMedia("(pointer: coarse)").matches && navigator.canShare?.({ files: [file] })) {
@@ -203,7 +203,7 @@ async function exportData() {
 async function importData(input) {
   const file = input.files[0];
   input.value = "";
-  if (typeof closeMenu === "function") closeMenu();
+  closeMenu();
   if (!file) return;
   try {
     const parsed = JSON.parse(await file.text());
@@ -211,10 +211,10 @@ async function importData(input) {
     if (!incoming.length) throw new Error("no valid tweets");
     const added = mergeTweets(incoming);
     save();
-    if (typeof renderAll === "function") renderAll();
-    if (typeof showToast === "function") showToast(t("toast_imported", added));
+    renderAll();
+    showToast(t("toast_imported", added));
   } catch (err) {
     console.warn("Import failed:", err);
-    if (typeof showToast === "function") showToast(t("toast_import_failed"));
+    showToast(t("toast_import_failed"));
   }
 }

@@ -181,13 +181,16 @@ function parseRoute() {
   return route;
 }
 
-function navigate({ view = "timeline", tag = null, month = null, search = null } = {}) {
+// replace=true は履歴を積まずに URL だけ書き換える（hashchange は起きないので、呼んだ側で描画する）
+function navigate({ view = "timeline", tag = null, month = null, search = null, replace = false } = {}) {
   const parts = [];
   if (view === "archive") parts.push("archive");
   if (month) parts.push(`month-${month}`);
   if (tag) parts.push(`tag-${encodeURIComponent(tag)}`);
   if (search) parts.push(`q-${encodeURIComponent(search)}`);
-  window.location.hash = parts.join("&");
+  const hash = parts.join("&");
+  if (replace) history.replaceState(null, "", `#${hash}`);
+  else window.location.hash = hash;
 }
 
 function handleRouting() {
@@ -247,75 +250,47 @@ function removeFilter(kind) {
 // -------------------------------------------------------------
 // 検索
 // -------------------------------------------------------------
+// 入力中に1文字ずつ絞り込む（インクリメンタル）。URL の #q-<検索語> は履歴を積まずに書き換える
 function toggleSearch() {
-  const route = parseRoute();
-  if (route.view !== "timeline") {
-    openSearch(true);
-    return;
-  }
-  if (isSearchOpen && document.activeElement === searchInput) {
-    closeSearch();
-  } else {
-    openSearch(true);
-  }
+  if (isSearchOpen && document.activeElement === searchInput) closeSearch();
+  else openSearch();
 }
 
-function openSearch(focus = true) {
+function openSearch() {
   isSearchOpen = true;
-  const route = parseRoute();
-  if (route.view !== "timeline") {
-    navigate({ view: "timeline", tag: tagFilter, month: monthFilter, search: searchFilter });
-  }
-  if (searchBar) searchBar.classList.add("show");
-  if (btnSearch) btnSearch.classList.add("active");
-  if (focus && searchInput) {
+  searchBar.classList.add("show");
+  btnSearch.classList.add("active");
+  if (parseRoute().view === "timeline") {
     searchInput.focus();
-    try { searchInput.select(); } catch (e) {}
-    requestAnimationFrame(() => {
-      searchInput.focus();
-    });
-    setTimeout(() => {
-      searchInput.focus();
-    }, 40);
+  } else {
+    // 詳細・振り返りからはタイムラインに戻り、表示されてから（handleRouting の後に）フォーカスする
+    window.addEventListener("hashchange", () => searchInput.focus(), { once: true });
+    navigate({ tag: tagFilter, month: monthFilter, search: searchFilter });
   }
 }
 
 function closeSearch() {
   isSearchOpen = false;
-  if (searchBar) searchBar.classList.remove("show");
-  if (btnSearch) btnSearch.classList.remove("active");
   clearSearch();
 }
 
 function clearSearch() {
-  if (searchInput) searchInput.value = "";
-  if (btnClearSearch) btnClearSearch.classList.remove("show");
-  applySearch(null, true);
+  searchInput.value = "";
+  applySearch(null);
 }
 
-function applySearch(val, updateUrl = true) {
+function applySearch(val) {
   const q = (val || "").trim() || null;
-  if (q === searchFilter) {
-    syncSearchUi();
-    return;
+  if (q !== searchFilter) {
+    searchFilter = q;
+    renderTimeline();
+    navigate({ tag: tagFilter, month: monthFilter, search: searchFilter, replace: true });
   }
-  searchFilter = q;
-  renderTimeline();
   syncSearchUi();
-  if (updateUrl) {
-    const parts = [];
-    if (monthFilter) parts.push(`month-${monthFilter}`);
-    if (tagFilter) parts.push(`tag-${encodeURIComponent(tagFilter)}`);
-    if (searchFilter) parts.push(`q-${encodeURIComponent(searchFilter)}`);
-    const newHash = parts.length ? `#${parts.join("&")}` : "#";
-    if (window.location.hash !== newHash) {
-      history.replaceState(null, "", newHash);
-    }
-  }
 }
 
 let searchInputTimer = null;
-let isSearchComposing = false;
+let isSearchComposing = false; // 日本語の変換中は絞り込まない（確定で絞り込む）
 
 function handleSearchCompositionStart() {
   isSearchComposing = true;
@@ -323,46 +298,37 @@ function handleSearchCompositionStart() {
 
 function handleSearchCompositionEnd() {
   isSearchComposing = false;
-  applySearch(searchInput?.value, true);
+  applySearch(searchInput.value);
 }
 
 function handleSearchInput(val) {
-  if (btnClearSearch) btnClearSearch.classList.toggle("show", !!val);
+  btnClearSearch.classList.toggle("show", !!val);
   if (isSearchComposing) return;
   clearTimeout(searchInputTimer);
-  searchInputTimer = setTimeout(() => {
-    applySearch(val, true);
-  }, 100);
+  searchInputTimer = setTimeout(() => applySearch(val), 100);
 }
 
 function handleSearchKeydown(e) {
   if (e.key === "Enter") {
-    if (e.isComposing || e.keyCode === 229 || isSearchComposing) return;
+    if (e.isComposing || e.keyCode === 229 || isSearchComposing) return; // 変換確定の Enter
     e.preventDefault();
     clearTimeout(searchInputTimer);
-    applySearch(searchInput?.value, true);
-    searchInput?.blur();
+    applySearch(searchInput.value);
+    searchInput.blur();
   } else if (e.key === "Escape") {
     e.preventDefault();
     closeSearch();
   }
 }
 
+// 検索バーの開閉・入力欄・✕ を searchFilter に合わせる（入力中は value を上書きしない：IME が壊れる）
 function syncSearchUi() {
-  if (!searchBar || !searchInput) return;
-  if (searchFilter) {
-    isSearchOpen = true;
-    searchBar.classList.add("show");
-    if (btnSearch) btnSearch.classList.add("active");
-    if (document.activeElement !== searchInput && searchInput.value !== searchFilter) {
-      searchInput.value = searchFilter;
-    }
-    if (btnClearSearch) btnClearSearch.classList.add("show");
-  } else if (!isSearchOpen) {
-    searchBar.classList.remove("show");
-    if (btnSearch) btnSearch.classList.remove("active");
-    if (btnClearSearch) btnClearSearch.classList.remove("show");
-  }
+  const open = isSearchOpen || !!searchFilter;
+  isSearchOpen = open;
+  searchBar.classList.toggle("show", open);
+  btnSearch.classList.toggle("active", open);
+  if (document.activeElement !== searchInput) searchInput.value = searchFilter || "";
+  btnClearSearch.classList.toggle("show", !!searchInput.value);
 }
 
 // ランダムに過去の1投稿を開く（偶然の再会）
@@ -828,7 +794,7 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.key === "/" && document.activeElement !== composerInput && document.activeElement !== searchInput && !editingTarget) {
     e.preventDefault();
-    openSearch(true);
+    openSearch();
     return;
   }
   if (e.key === "Escape") {
@@ -1243,11 +1209,10 @@ function buildPostActionsHtml(tweetId, inDetail = false) {
   `;
 }
 
-function buildTweetItemHtml(tweet, noBorder = false) {
+function buildTweetItemHtml(tweet) {
   const id = tweet.id;
-  const classes = ["tweet-item", enterClass(tweet.createdAt), noBorder ? "no-border-bottom" : ""].filter(Boolean).join(" ");
   return `
-    <article class="${classes}" id="${id}">
+    <article class="tweet-item ${enterClass(tweet.createdAt)}" id="${id}">
       <div class="tweet-header">
         <span class="tweet-date-link" onclick="goToTweet('${id}')">${formatTimestamp(tweet.createdAt)}${buildMoodMarkHtml(tweet)}${buildEditedMarkHtml(tweet)}</span>
       </div>
@@ -1317,39 +1282,32 @@ function formatDateDivider(date) {
 
 function renderTimeline() {
   const visible = tweets.filter(isVisibleInTimeline);
-  if (visible.length === 0 && searchFilter) {
-    timelineStream.innerHTML = `
+  timelineStream.innerHTML = visible.length || !searchFilter
+    ? visible.map(buildTweetItemHtml).join("")
+    : `
       <div class="timeline-empty-state">
         <div class="empty-state-text">${t("search_empty")}</div>
         <button class="btn-clear-empty" onclick="clearSearch()">${t("btn_clear_search")}</button>
       </div>
     `;
-    updateFilterBar();
-    renderedDayKey = dayKey(new Date());
-    return;
-  }
-
-  let lastDay = null;
-  const parts = [];
-  for (let i = 0; i < visible.length; i++) {
-    const tw = visible[i];
-    const twDate = new Date(tw.createdAt);
-    const twDay = dayKey(twDate);
-    if (twDay !== lastDay) {
-      lastDay = twDay;
-      parts.push(`
-        <div class="timeline-day-divider" data-day="${twDay}">
-          <span>${formatDateDivider(twDate)}</span>
-        </div>
-      `);
-    }
-    const nextTw = visible[i + 1];
-    const isNextDayDifferent = nextTw && dayKey(new Date(nextTw.createdAt)) !== twDay;
-    parts.push(buildTweetItemHtml(tw, isNextDayDifferent));
-  }
-  timelineStream.innerHTML = parts.join("");
+  syncDayDividers();
   updateFilterBar();
   renderedDayKey = dayKey(new Date());
+}
+
+// 日付の区切りを、表示中のポストの並びから付け直す。全体の描画と1件ずつの差し替え（refresh）の両方から呼ぶ。
+// 区切りの直前のポストの下線は CSS（:has）で消す
+function syncDayDividers() {
+  timelineStream.querySelectorAll(".timeline-day-divider").forEach((el) => el.remove());
+  let lastDay = null;
+  for (const el of timelineStream.querySelectorAll(".tweet-item:not(.leaving)")) {
+    const tweet = findTweet(el.id);
+    if (!tweet) continue;
+    const date = new Date(tweet.createdAt);
+    if (dayKey(date) === lastDay) continue;
+    lastDay = dayKey(date);
+    el.insertAdjacentHTML("beforebegin", `<div class="timeline-day-divider"><span>${formatDateDivider(date)}</span></div>`);
+  }
 }
 
 function renderAll() {
@@ -1365,6 +1323,7 @@ function renderAll() {
 function refresh(tweetId) {
   const quotingIds = tweets.filter((tw) => tw.targetQuoteId === tweetId).map((tw) => tw.id);
   for (const id of [tweetId, ...quotingIds]) patchTimelineItem(id);
+  syncDayDividers();
   updateFilterBar();
   const detailId = currentDetailId();
   if (detailId) renderDetailView(detailId);
@@ -1379,7 +1338,10 @@ function patchTimelineItem(id) {
     el.outerHTML = buildTweetItemHtml(tweet);
   } else if (el) {
     el.classList.add("leaving");
-    setTimeout(() => el.remove(), 150);
+    setTimeout(() => {
+      el.remove();
+      syncDayDividers();
+    }, 150);
   } else if (visible) {
     const olderShown = tweets.slice(tweets.indexOf(tweet) + 1).find((tw) => $(tw.id));
     if (olderShown) {
@@ -1390,7 +1352,9 @@ function patchTimelineItem(id) {
   }
 }
 
-// 詳細画面：ポスト本体 → コメント → コメント入力 → このポストを引用した未来のポスト
+// -------------------------------------------------------------
+// 詳細画面：ポスト本体 → コメント → コメント入力 → このポストを引用した未来のポスト → 前 / 次
+// -------------------------------------------------------------
 function renderDetailView(tweetId) {
   const tweet = findTweet(tweetId);
   if (!tweet) {
@@ -1519,7 +1483,7 @@ function openHeatRow(event, month) {
 // その日（投稿がなければ、それより前で一番近い日）の最初のポストまでスクロールし、一瞬ハイライトする。
 // 画面外のポストは高さが見積もりなので、描画が落ち着いてからもう一度合わせる
 function scrollToDay(key) {
-  const items = [...timelineStream.children];
+  const items = [...timelineStream.querySelectorAll(".tweet-item")];
   const target = items.find((el) => dayKey(new Date(findTweet(el.id).createdAt)) <= key) || items[items.length - 1];
   if (!target) return;
   target.scrollIntoView({ block: "start" });
@@ -1669,6 +1633,9 @@ function buildHeatYearHtml(year, days, now) {
   `;
 }
 
+// -------------------------------------------------------------
+// 外から開かれたとき（他のアプリの「共有」→ ?title=&text=&url= を下書きに入れる）
+// -------------------------------------------------------------
 function handleSharedTargetParams() {
   try {
     const urlObj = new URL(window.location.href);
