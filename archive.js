@@ -95,15 +95,14 @@ function buildRecentHtml(days, now) {
       daysWritten++;
       posts += list.length;
     }
-    // 雨が降るように1つ1つ別々のタイミングでポコポコ落ちてくるディレイ（隣接する日が重ならないよう分散＋揺らぎ）
+    // 雨が降るように各日の起点タイミングを分散（隣接する日が重ならないよう分散＋揺らぎ）
     const rainDelays = [140, 320, 50, 240, 380, 20, 290, 100, 350, 180, 40, 270, 120, 210];
     const colIndex = RECENT_DAYS - 1 - i;
     const jitter = Math.floor(Math.random() * 40) - 20;
-    const delay = Math.max(10, rainDelays[colIndex] + jitter);
-    const duration = 460 + (colIndex % 4) * 25; // 460ms〜535msで雨粒ごとに落下速度に微妙な個性
+    const dayBaseDelay = Math.max(10, rainDelays[colIndex] + jitter);
     columns.push(`
       <button class="recent-day ${i === 0 ? "is-today" : ""}" ${list.length ? `onclick="openDay('${key}')"` : "disabled"} title="${t("heat_cell_title", monthDayFormat.format(date), list.length)}">
-        <span class="heat-day">${buildDayBarHtml(list.map((tw) => tw.mood), delay, duration)}</span>
+        <span class="heat-day">${buildDayBarHtml(list.map((tw) => tw.mood), dayBaseDelay)}</span>
         <span class="recent-date">${date.getDate()}</span>
         <span class="recent-week">${weekdayFormat.format(date)}</span>
       </button>
@@ -140,15 +139,22 @@ function buildMemoryCardHtml(days, now) {
 }
 
 // その日の棒：高さがポスト数、帯の色が1件ずつの気分（下から古い順）
-function buildDayBarHtml(moods, delayMs = null, durationMs = null) {
+function buildDayBarHtml(moods, dayBaseDelay = null) {
   if (!moods.length) return "";
   const height = (Math.min(moods.length, BAR_MAX_POSTS) / BAR_MAX_POSTS) * 100;
-  const segments = moods.map((mood) => `<span class="${mood ? `m${mood}` : "no-mood"}"></span>`).join("");
-  let animStyle = `style="height: ${height}%`;
-  if (delayMs !== null) animStyle += `; animation-delay: ${delayMs}ms`;
-  if (durationMs !== null) animStyle += `; animation-duration: ${durationMs}ms`;
-  animStyle += `"`;
-  return `<span class="heat-bar ${moods.length > BAR_MAX_POSTS ? "is-dense" : ""}" ${animStyle}>${segments}</span>`;
+  const isAnimated = dayBaseDelay !== null;
+  // 1件ずつの投稿が下から順にポコポコ落ちて積み上がる
+  // 投稿数が多い日は少しピッチを詰めてリズミカルに（最大値へ向かってまとまる）
+  const stepDelay = moods.length > 5 ? Math.max(30, Math.floor(200 / moods.length)) : 65;
+  const segments = moods.map((mood, idx) => {
+    let animStyle = "";
+    if (isAnimated) {
+      const itemDelay = dayBaseDelay + idx * stepDelay;
+      animStyle = ` style="animation-delay: ${itemDelay}ms;"`;
+    }
+    return `<span class="${mood ? `m${mood}` : "no-mood"}"${animStyle}></span>`;
+  }).join("");
+  return `<span class="heat-bar ${moods.length > BAR_MAX_POSTS ? "is-dense" : ""}" style="height: ${height}%">${segments}</span>`;
 }
 
 function buildHeatYearHtml(year, days, now) {
