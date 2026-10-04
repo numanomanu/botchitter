@@ -4,7 +4,7 @@
 // URL を含む投稿をした時に、アプリから GET /api/ogp?url=... で呼ばれる。
 // 返すのは { title, siteName, image } だけ。本文や端末のデータは受け取らない。
 // セキュリティ & コスト対策:
-// 1. 本番ドメイン（botchitter.vercel.app）からのみ受付（外部の踏み台・無断利用を403で拒否）
+// 1. 同一ドメイン（Same-Origin）からのみ受付（外部の踏み台・無断利用を403で拒否。フォーク先でも無設定で動作）
 // 2. Vercel エッジキャッシュ（s-maxage）により、同一URLの再取得をCDNで即時返却（Function実行回数を激減）
 // 3. SSRF対策: 内部・プライベートIP宛て拒否、時間・サイズ・リダイレクト制限
 // =============================================================
@@ -20,7 +20,7 @@ const USER_AGENT = "Mozilla/5.0 (compatible; botchitter-link-preview/1.0)";
 module.exports = async (req, res) => {
   if (req.method !== "GET" && req.method !== "POST") return res.status(405).end();
 
-  // ドメイン制限: botchitter.vercel.app 以外からのリクエストは拒否 (localhost含む外部アクセスを403)
+  // ドメイン制限: 外部からの不正呼び出し・踏み台利用を403で拒否
   if (!isAllowedRequest(req)) {
     return res.status(403).json({ error: "forbidden" });
   }
@@ -46,25 +46,32 @@ module.exports = async (req, res) => {
   }
 };
 
+// 特定のドメインに完全固定したい場合は環境変数や定数で指定（未指定時は自身が稼働するホストと動的一致）
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || null;
+
 function isAllowedRequest(req) {
   // 1. モダンブラウザの Same-Origin リクエスト
   if (req.headers["sec-fetch-site"] === "same-origin") {
     return true;
   }
 
-  // 2. Origin または Referer が botchitter.vercel.app であること
-  const isTargetDomain = (val) => {
+  // 2. 稼働先ホスト名を取得（フォーク先の Vercel ドメインや独自ドメインにも自動適応）
+  const currentHost = (req.headers["x-forwarded-host"] || req.headers.host || "").split(":")[0].toLowerCase();
+  if (!currentHost && !ALLOWED_ORIGIN) return false;
+
+  const isMatch = (val) => {
     if (!val) return false;
     try {
       const u = new URL(val);
-      return u.hostname === "botchitter.vercel.app" || /^botchitter(-.*)?\.vercel\.app$/.test(u.hostname);
+      if (ALLOWED_ORIGIN && (val === ALLOWED_ORIGIN || u.hostname === ALLOWED_ORIGIN)) return true;
+      return currentHost && u.hostname.toLowerCase() === currentHost;
     } catch {
       return false;
     }
   };
 
-  if (req.headers.origin && isTargetDomain(req.headers.origin)) return true;
-  if (req.headers.referer && isTargetDomain(req.headers.referer)) return true;
+  if (req.headers.origin && isMatch(req.headers.origin)) return true;
+  if (req.headers.referer && isMatch(req.headers.referer)) return true;
 
   return false;
 }
