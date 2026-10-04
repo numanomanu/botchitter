@@ -73,6 +73,11 @@ function renderArchive(tag) {
     </div>
     ${years.join("")}
   `;
+
+  const activeChip = archiveContent.querySelector(".archive-tags .tag-chip.is-active");
+  if (activeChip) {
+    activeChip.scrollIntoView({ inline: "nearest", block: "nearest" });
+  }
 }
 
 const RECENT_DAYS = 14;

@@ -322,9 +322,18 @@
   flex-wrap: wrap;
   gap: 6px;
   padding: 10px 16px 14px;
-  max-height: 40vh;
+  max-height: 160px;
   overflow-y: auto;
   border-bottom: 1px solid var(--line);
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.tag-list::-webkit-scrollbar {
+  width: 4px;
+}
+.tag-list::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 999px;
 }
 .tag-list.show {
   display: flex;
