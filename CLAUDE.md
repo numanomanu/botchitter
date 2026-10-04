@@ -7,7 +7,8 @@
 ## ルール
 - 状態を変えたら `save()` → `refresh(tweetId)`。DOM を個別に書き換えない（`refresh` がタイムラインと詳細画面の両方を直す）
 - 日付の表示文字列は保存しない。`createdAt` から `formatTimestamp()` で作る
-- タグは保存しない。本文の `#xxx` から `textTokens()` で都度読み取る（URL も同じ関数で切り出す）。絞り込みは URL の `#tag-<tag>`
+- タグは保存しない。本文の `#xxx` から `textTokens()` で都度読み取る（URL も同じ関数で切り出す）
+- 画面と絞り込みは URL の # 以降で決まる（`parseRoute()` / `navigate()`）。`#tweet-<id>` 詳細、`#archive` 振り返り（草）、それ以外はタイムラインで `tag-<tag>`・`month-<YYYY-MM>` を & でつなぐ。hash を直接組み立てず `navigate()` を使う
 - 入力欄の textarea は `.highlight-field`（`.highlight-backdrop` + textarea）で包む（#タグのハイライト）。プログラムから value を変えたら `syncHighlight()` を呼ぶ
 - タグで絞り込み中は入力欄の先頭にそのタグを自動で入れる（`applyAutoTag()`）。手つかずなら解除時に外し、下書きにも残さない
 - リンクのタイトル（`link`）は投稿・編集した時に1回だけ `attachLinkPreview()` で取って保存する。表示のたびに外へ通信しない（画像も出さない）

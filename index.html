@@ -33,7 +33,7 @@
     </div>
 
     <div class="header-right">
-      <div class="header-date" id="todayDateLabel"></div>
+      <button class="header-date" id="todayDateLabel" onclick="openArchive()"></button>
       <button class="header-icon-btn" id="themeToggleBtn" onclick="toggleTheme()"></button>
       <button class="header-icon-btn" onclick="openMenu()" aria-label="Menu">
         <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
@@ -50,11 +50,8 @@
       <button class="btn-cancel-quote" onclick="dismissInstallHint()" aria-label="Close">✕</button>
     </div>
 
-    <!-- タグで絞り込み中（#tag-<tag>） -->
-    <div class="tag-filter" id="tagFilterBar">
-      <span><span id="tagFilterLabel"></span><span class="tag-count" id="tagFilterCount"></span></span>
-      <button class="btn-cancel-quote" onclick="goHome()" aria-label="Close">✕</button>
-    </div>
+    <!-- 絞り込み中の条件（月・タグ。#month-<YYYY-MM>&tag-<tag>） -->
+    <div class="filter-bar" id="filterBar"></div>
 
     <!-- 投稿フォーム -->
     <section class="composer">
@@ -96,6 +93,11 @@
     <div id="detailContent"></div>
   </div>
 
+  <!-- 3. 振り返り（#archive。草） -->
+  <div class="view-archive" id="viewArchive">
+    <div id="archiveContent"></div>
+  </div>
+
   <!-- 削除確認モーダル -->
   <div class="confirm-overlay" id="confirmOverlay" onclick="closeConfirm()">
     <div class="confirm-dialog" onclick="event.stopPropagation()">
@@ -107,10 +109,11 @@
     </div>
   </div>
 
-  <!-- メニュー（タグ一覧とバックアップの書き出し・読み込み） -->
+  <!-- メニュー（タグ一覧・振り返り・バックアップの書き出し／読み込み） -->
   <div class="confirm-overlay" id="menuOverlay" onclick="closeMenu()">
     <div class="confirm-dialog menu-dialog" onclick="event.stopPropagation()">
       <div class="tag-list" id="tagList"></div>
+      <button class="menu-item" id="btnArchive" onclick="openArchive()"></button>
       <button class="menu-item" id="btnExport" onclick="exportData()"></button>
       <label class="menu-item" id="btnImport" for="importInput"></label>
       <input type="file" id="importInput" class="visually-hidden" accept=".json,application/json" onchange="importData(this)" />

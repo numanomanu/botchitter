@@ -16,6 +16,7 @@ let currentQuoteTarget = null; // { id, createdAt, text }
 let activeReplyBoxId = null;
 let editingTarget = null; // { tweetId, replyId, text }（詳細画面で編集中の項目と入力途中の文）
 let tagFilter = null; // タイムラインを絞り込み中のタグ（#tag-<tag> のとき）
+let monthFilter = null; // タイムラインを絞り込み中の月 YYYY-MM（#month-<YYYY-MM> のとき）
 let autoTag = null; // { prefix, original } 絞り込み中に入力欄の先頭へ自動で入れたタグと、入れる前の文
 let confirmCallback = null;
 let renderedDayKey = "";
@@ -37,7 +38,9 @@ const themeToggleBtn = $("themeToggleBtn");
 const confirmOverlay = $("confirmOverlay");
 const menuOverlay = $("menuOverlay");
 const installHint = $("installHint");
-const tagFilterBar = $("tagFilterBar");
+const filterBar = $("filterBar");
+const viewArchive = $("viewArchive");
+const archiveContent = $("archiveContent");
 const tagList = $("tagList");
 
 const ICONS = {
@@ -67,6 +70,7 @@ const I18N = {
     confirm_delete: "削除しますか？",
     yesterday: "昨日",
     edited: "編集済み",
+    menu_archive: "振り返る",
     menu_export: "バックアップを書き出す",
     menu_import: "バックアップを読み込む",
     install_hint: "ホーム画面に追加すると、記録が消えにくくなります",
@@ -74,7 +78,11 @@ const I18N = {
     toast_imported: (n) => `${n}件を読み込みました`,
     toast_import_failed: "読み込めませんでした",
     theme_light_title: "ライトモード",
-    theme_dark_title: "ダークモード"
+    theme_dark_title: "ダークモード",
+    archive_all: "すべて",
+    heat_less: "少",
+    heat_more: "多",
+    heat_cell_title: (date, n) => `${date} ${n}件`
   },
   en: {
     placeholder_default: "What did you feel today?",
@@ -86,6 +94,7 @@ const I18N = {
     confirm_delete: "Delete?",
     yesterday: "Yesterday",
     edited: "Edited",
+    menu_archive: "Look back",
     menu_export: "Export backup",
     menu_import: "Import backup",
     install_hint: "Add to Home Screen so your notes don't get cleared",
@@ -93,7 +102,11 @@ const I18N = {
     toast_imported: (n) => `Imported ${n}`,
     toast_import_failed: "Couldn't import this file",
     theme_light_title: "Light mode",
-    theme_dark_title: "Dark mode"
+    theme_dark_title: "Dark mode",
+    archive_all: "All",
+    heat_less: "Less",
+    heat_more: "More",
+    heat_cell_title: (date, n) => `${date}: ${n}`
   }
 };
 
@@ -109,6 +122,8 @@ function applyTranslations() {
   $("confirmTitle").textContent = t("confirm_delete");
   $("btnConfirmCancel").textContent = t("btn_cancel");
   $("btnConfirmDelete").textContent = t("btn_delete");
+  $("btnArchive").textContent = t("menu_archive");
+  $("todayDateLabel").title = t("menu_archive");
   $("btnExport").textContent = t("menu_export");
   $("btnImport").textContent = t("menu_import");
   $("installHintText").textContent = t("install_hint");
@@ -121,9 +136,18 @@ const DATE_LOCALE = LOCALE === "ja" ? "ja-JP" : "en-US";
 const headerDateFormat = new Intl.DateTimeFormat(DATE_LOCALE, { month: "short", day: "numeric", weekday: "short" });
 const monthDayFormat = new Intl.DateTimeFormat(DATE_LOCALE, { month: "short", day: "numeric" });
 const fullDateFormat = new Intl.DateTimeFormat(DATE_LOCALE, { year: "numeric", month: "short", day: "numeric" });
+const monthLabelFormat = new Intl.DateTimeFormat(DATE_LOCALE, { month: "short" });
+const yearMonthFormat = new Intl.DateTimeFormat(DATE_LOCALE, { year: "numeric", month: "long" });
 
 const pad2 = (n) => String(n).padStart(2, "0");
 const dayKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const monthKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+
+// "2026-09" → 「2026年9月」
+function formatMonth(key) {
+  const [year, month] = key.split("-").map(Number);
+  return yearMonthFormat.format(new Date(year, month - 1, 1));
+}
 
 // 今日「20:30」/ 昨日「昨日 20:30」/ 今年「9月28日 20:30」/ それ以前「2025年9月28日」
 // full=true（詳細画面）は常に年月日と時刻
@@ -404,42 +428,66 @@ function dismissInstallHint() {
 }
 
 // -------------------------------------------------------------
-// ルーティング（#tweet-<id> で詳細画面）
+// ルーティング（URL の # 以降）
+//   #tweet-<id>  詳細画面
+//   #archive     振り返り（草）
+//   それ以外はタイムラインで、& 区切りの絞り込みを付けられる: tag-<タグ> / month-<YYYY-MM>
+//   例: #tag-株  #month-2026-09&tag-株  #archive&tag-株（草をそのタグだけで描く）
 // -------------------------------------------------------------
 function currentDetailId() {
   const hash = window.location.hash;
   return hash.startsWith("#tweet-") ? hash.slice("#tweet-".length) : null;
 }
 
-function currentTagFilter() {
-  const hash = window.location.hash;
-  if (!hash.startsWith("#tag-")) return null;
-  try {
-    return normalizeTag(decodeURIComponent(hash.slice("#tag-".length)));
-  } catch (e) {
-    return null;
+function parseRoute() {
+  const detailId = currentDetailId();
+  if (detailId) return { view: "detail", detailId, tag: null, month: null };
+  const route = { view: "timeline", detailId: null, tag: null, month: null };
+  for (const part of window.location.hash.slice(1).split("&")) {
+    if (part === "archive") route.view = "archive";
+    else if (/^month-\d{4}-\d{2}$/.test(part)) route.month = part.slice("month-".length);
+    else if (part.startsWith("tag-")) {
+      try {
+        route.tag = normalizeTag(decodeURIComponent(part.slice("tag-".length)));
+      } catch (e) {}
+    }
   }
+  return route;
+}
+
+function navigate({ view = "timeline", tag = null, month = null } = {}) {
+  const parts = [];
+  if (view === "archive") parts.push("archive");
+  if (month) parts.push(`month-${month}`);
+  if (tag) parts.push(`tag-${encodeURIComponent(tag)}`);
+  window.location.hash = parts.join("&");
 }
 
 function handleRouting() {
-  const detailId = currentDetailId();
+  const route = parseRoute();
   const wasTimeline = !viewTimeline.classList.contains("hidden");
-  if (detailId && wasTimeline) timelineScrollY = window.scrollY;
+  if (route.view !== "timeline" && wasTimeline) timelineScrollY = window.scrollY;
   editingTarget = null;
 
-  viewTimeline.classList.toggle("hidden", !!detailId);
-  viewDetail.classList.toggle("active", !!detailId);
-  btnBack.classList.toggle("show", !!detailId);
+  viewTimeline.classList.toggle("hidden", route.view !== "timeline");
+  viewDetail.classList.toggle("active", route.view === "detail");
+  viewArchive.classList.toggle("active", route.view === "archive");
+  btnBack.classList.toggle("show", route.view !== "timeline");
 
-  if (detailId) {
-    renderDetailView(detailId);
+  if (route.view === "detail") {
+    renderDetailView(route.detailId);
     window.scrollTo(0, 0);
     return;
   }
-  const tag = currentTagFilter();
-  if (tag !== tagFilter) {
-    tagFilter = tag;
-    applyAutoTag(tag);
+  if (route.view === "archive") {
+    renderArchive(route.tag);
+    window.scrollTo(0, 0);
+    return;
+  }
+  if (route.tag !== tagFilter || route.month !== monthFilter) {
+    if (route.tag !== tagFilter) applyAutoTag(route.tag);
+    tagFilter = route.tag;
+    monthFilter = route.month;
     renderTimeline();
     window.scrollTo(0, 0);
   } else if (!wasTimeline) {
@@ -449,6 +497,11 @@ function handleRouting() {
 
 function goHome() {
   window.location.hash = "";
+}
+
+// タイムラインの絞り込みを1つ外す（月かタグ）
+function removeFilter(kind) {
+  navigate({ tag: kind === "tag" ? null : tagFilter, month: kind === "month" ? null : monthFilter });
 }
 
 function goToTweet(tweetId) {
@@ -591,9 +644,11 @@ function publishTweet() {
   clearComposerDraft();
   clearQuote();
   refresh(`tw-${now}`);
-  // 絞り込み中：タグを消して投稿したら全体表示へ。そのままなら次の投稿のためにまたタグを入れておく
-  if (tagFilter && !matchesTag(tweets[0], tagFilter)) goHome();
-  else if (tagFilter) applyAutoTag(tagFilter);
+  // 絞り込み中に投稿が見えなくなる場合（タグを消した・過去の月を見ていた）は、見える絞り込みに切り替える。
+  // タグが付いたままなら、次の投稿のためにまたタグを入れておく
+  const keepTag = tagFilter && matchesTag(tweets[0], tagFilter) ? tagFilter : null;
+  if (!isVisibleInTimeline(tweets[0])) navigate({ tag: keepTag });
+  if (keepTag) applyAutoTag(keepTag);
   attachLinkPreview(`tw-${now}`);
 }
 
@@ -979,27 +1034,36 @@ const matchesTag = (tweet, tag) => threadTags(tweet).includes(tag);
 function openTag(event, tag) {
   event.stopPropagation();
   closeMenu();
-  window.location.hash = `#tag-${encodeURIComponent(tag)}`;
+  navigate({ tag });
 }
 
-// メニューのタグ一覧（そのタグを含むポストの数が多い順）
-function renderTagList() {
+// [[タグ, そのタグを含むポストの数], ...]（多い順）
+function tagCounts() {
   const counts = new Map();
   for (const tweet of tweets) {
     for (const tag of new Set(threadTags(tweet))) counts.set(tag, (counts.get(tag) || 0) + 1);
   }
-  const sorted = [...counts].sort((a, b) => b[1] - a[1]);
+  return [...counts].sort((a, b) => b[1] - a[1]);
+}
+
+// メニューのタグ一覧
+function renderTagList() {
+  const sorted = tagCounts();
   tagList.innerHTML = sorted.map(([tag, count]) => `
     <button class="tag-chip" data-tag="${escapeHtml(tag)}" onclick="openTag(event, this.dataset.tag)">#${escapeHtml(tag)}<span class="tag-count">${count}</span></button>
   `).join("");
   tagList.classList.toggle("show", sorted.length > 0);
 }
 
-function updateTagFilterBar() {
-  tagFilterBar.classList.toggle("show", !!tagFilter);
-  if (!tagFilter) return;
-  $("tagFilterLabel").textContent = `#${tagFilter}`;
-  $("tagFilterCount").textContent = tweets.filter((tw) => matchesTag(tw, tagFilter)).length;
+// 絞り込み中の条件（月・タグ）を、それぞれ ✕ で外せるチップで出す
+function updateFilterBar() {
+  filterBar.classList.toggle("show", !!(tagFilter || monthFilter));
+  if (!tagFilter && !monthFilter) return;
+  filterBar.innerHTML = `
+    ${monthFilter ? `<button class="filter-chip" onclick="removeFilter('month')">${formatMonth(monthFilter)}<span class="filter-chip-x">✕</span></button>` : ""}
+    ${tagFilter ? `<button class="filter-chip is-tag" onclick="removeFilter('tag')">#${escapeHtml(tagFilter)}<span class="filter-chip-x">✕</span></button>` : ""}
+    <span class="tag-count">${tweets.filter(isVisibleInTimeline).length}</span>
+  `;
 }
 
 // -------------------------------------------------------------
@@ -1223,19 +1287,21 @@ function buildTweetItemHtml(tweet) {
 // -------------------------------------------------------------
 // 描画
 // -------------------------------------------------------------
-const isVisibleInTimeline = (tweet) => !tagFilter || matchesTag(tweet, tagFilter);
+const isVisibleInTimeline = (tweet) =>
+  (!tagFilter || matchesTag(tweet, tagFilter)) && (!monthFilter || monthKey(new Date(tweet.createdAt)) === monthFilter);
 
 function renderTimeline() {
   timelineStream.innerHTML = tweets.filter(isVisibleInTimeline).map(buildTweetItemHtml).join("");
-  updateTagFilterBar();
+  updateFilterBar();
   renderedDayKey = dayKey(new Date());
 }
 
 function renderAll() {
   renderTodayDate();
   renderTimeline();
-  const detailId = currentDetailId();
-  if (detailId) renderDetailView(detailId);
+  const route = parseRoute();
+  if (route.view === "detail") renderDetailView(route.detailId);
+  if (route.view === "archive") renderArchive(route.tag);
 }
 
 // 状態を変えた後に呼ぶ唯一の描画入口。タイムライン上の該当ポスト（とそれを引用しているポスト）を
@@ -1243,7 +1309,7 @@ function renderAll() {
 function refresh(tweetId) {
   const quotingIds = tweets.filter((tw) => tw.targetQuoteId === tweetId).map((tw) => tw.id);
   for (const id of [tweetId, ...quotingIds]) patchTimelineItem(id);
-  updateTagFilterBar();
+  updateFilterBar();
   const detailId = currentDetailId();
   if (detailId) renderDetailView(detailId);
 }
@@ -1345,6 +1411,87 @@ function renderDetailView(tweetId) {
     } catch (e) {}
   }
   detailContent.querySelectorAll("textarea").forEach(syncHighlight);
+}
+
+// -------------------------------------------------------------
+// 振り返り（草）
+// GitHub の草を、スマホの幅に収まるよう「縦に月・横に日（1〜31）」に並べ替えて年ごとに出す。
+// 色はその日のポスト数（タグを選ぶとそのタグのポストだけ）。月の行をタップするとその月のタイムラインへ
+// -------------------------------------------------------------
+function openArchive(tag = tagFilter) {
+  closeMenu();
+  navigate({ view: "archive", tag: tag || null });
+}
+
+function openMonth(month) {
+  navigate({ month, tag: parseRoute().tag });
+}
+
+const heatLevel = (count) => (count >= 5 ? 4 : count >= 3 ? 3 : count);
+
+function renderArchive(tag) {
+  const counts = new Map(); // "YYYY-MM-DD" → ポスト数
+  for (const tweet of tweets) {
+    if (tag && !matchesTag(tweet, tag)) continue;
+    const key = dayKey(new Date(tweet.createdAt));
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+
+  const now = new Date();
+  const firstYear = tweets.length ? new Date(Math.min(...tweets.map((tw) => tw.createdAt))).getFullYear() : now.getFullYear();
+  const years = [];
+  for (let year = now.getFullYear(); year >= firstYear; year--) years.push(buildHeatYearHtml(year, counts, now));
+
+  const chips = [[null, tweets.length], ...tagCounts()].map(([chipTag, count]) => `
+    <button class="tag-chip ${chipTag === tag ? "is-active" : ""}" data-tag="${escapeHtml(chipTag || "")}" onclick="openArchive(this.dataset.tag)">
+      ${chipTag ? `#${escapeHtml(chipTag)}` : t("archive_all")}<span class="tag-count">${count}</span>
+    </button>
+  `).join("");
+  const legend = [0, 1, 2, 3, 4].map((level) => `<span class="heat-cell l${level}"></span>`).join("");
+
+  archiveContent.innerHTML = `
+    <div class="archive-tags">${chips}</div>
+    <div class="heat-legend">${t("heat_less")}${legend}${t("heat_more")}</div>
+    ${years.join("")}
+  `;
+}
+
+function buildHeatYearHtml(year, counts, now) {
+  let yearTotal = 0;
+  const rows = [];
+  for (let month = 0; month < 12; month++) {
+    const key = `${year}-${pad2(month + 1)}`;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const isFutureMonth = new Date(year, month, 1) > now;
+    let monthTotal = 0;
+    const cells = [];
+    for (let day = 1; day <= 31; day++) {
+      if (day > daysInMonth) {
+        cells.push(`<span class="heat-cell is-void"></span>`);
+        continue;
+      }
+      const date = new Date(year, month, day);
+      const count = counts.get(dayKey(date)) || 0;
+      monthTotal += count;
+      const classes = [`l${heatLevel(count)}`, date > now ? "is-future" : "", dayKey(date) === dayKey(now) ? "is-today" : ""].join(" ");
+      cells.push(`<span class="heat-cell ${classes}" title="${t("heat_cell_title", monthDayFormat.format(date), count)}"></span>`);
+    }
+    yearTotal += monthTotal;
+    const clickable = monthTotal > 0 && !isFutureMonth;
+    rows.push(`
+      <div class="heat-row ${clickable ? "is-clickable" : ""}" ${clickable ? `onclick="openMonth('${key}')"` : ""}>
+        <span class="heat-month">${monthLabelFormat.format(new Date(year, month, 1))}</span>
+        ${cells.join("")}
+        <span class="heat-count">${monthTotal || ""}</span>
+      </div>
+    `);
+  }
+  return `
+    <section class="heat-year">
+      <div class="heat-year-head">${year}<span class="tag-count">${yearTotal}</span></div>
+      ${rows.join("")}
+    </section>
+  `;
 }
 
 // -------------------------------------------------------------

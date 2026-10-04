@@ -22,6 +22,11 @@
     --danger: #D9534F;
     --tag: #4F6F96;
     --tag-bg: rgba(79, 111, 150, 0.16);
+    --heat-0: #E6E6E0;
+    --heat-1: #C7DEBC;
+    --heat-2: #9BC78B;
+    --heat-3: #69A65A;
+    --heat-4: #427D35;
     --hover-overlay: rgba(0, 0, 0, 0.03);
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --font-sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
@@ -44,6 +49,11 @@
     --danger: #FF6B6B;
     --tag: #8EAAD0;
     --tag-bg: rgba(142, 170, 208, 0.22);
+    --heat-0: #252523;
+    --heat-1: #2D472A;
+    --heat-2: #3E6836;
+    --heat-3: #568F49;
+    --heat-4: #7DBA68;
     --hover-overlay: rgba(255, 255, 255, 0.04);
   }
 
@@ -64,6 +74,11 @@
       --danger: #FF6B6B;
     --tag: #8EAAD0;
     --tag-bg: rgba(142, 170, 208, 0.22);
+    --heat-0: #252523;
+    --heat-1: #2D472A;
+    --heat-2: #3E6836;
+    --heat-3: #568F49;
+    --heat-4: #7DBA68;
       --hover-overlay: rgba(255, 255, 255, 0.04);
     }
   }
@@ -177,8 +192,19 @@
   }
 
   .header-date {
+    background: none;
+    border: none;
+    font-family: inherit;
     font-size: 12px;
     color: var(--text-secondary);
+    padding: 4px 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: color 0.15s, background-color 0.15s;
+  }
+  .header-date:hover {
+    color: var(--text-primary);
+    background: var(--hover-overlay);
   }
 
   .header-icon-btn {
@@ -1041,18 +1067,41 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .tag-filter {
+  .filter-bar {
     display: none;
-    justify-content: space-between;
+    flex-wrap: wrap;
     align-items: center;
-    padding: 12px 0;
+    gap: 6px;
+    padding: 10px 0;
     border-bottom: 1px solid var(--line);
-    font-size: 14px;
+  }
+  .filter-bar.show {
+    display: flex;
+  }
+
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--quote-bg);
+    border: none;
+    border-radius: 999px;
+    padding: 5px 10px 5px 12px;
+    font-family: inherit;
+    font-size: 13px;
     font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+  .filter-chip.is-tag {
     color: var(--tag);
   }
-  .tag-filter.show {
-    display: flex;
+  .filter-chip:hover {
+    background: var(--quote-hover);
+  }
+  .filter-chip-x {
+    font-size: 11px;
+    color: var(--text-tertiary);
   }
 
   .tag-list {
@@ -1157,3 +1206,96 @@
     border-radius: 3px;
     box-shadow: 0 0 0 2px var(--tag-bg);
   }
+
+  /* ---------------------------------
+     振り返り（草）：縦に月・横に日（1〜31）
+  --------------------------------- */
+  .view-archive {
+    display: none;
+    padding: 16px 0 24px;
+    animation: fadeInTweet 0.25s var(--ease-out);
+  }
+  .view-archive.active {
+    display: block;
+  }
+
+  .archive-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .tag-chip.is-active {
+    background: var(--tag-bg);
+    box-shadow: inset 0 0 0 1px var(--tag);
+  }
+
+  .heat-legend {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 3px;
+    margin-bottom: 6px;
+    font-size: 10px;
+    color: var(--text-tertiary);
+  }
+  .heat-legend .heat-cell {
+    width: 9px;
+  }
+  .heat-legend .heat-cell:first-child {
+    margin-left: 4px;
+  }
+  .heat-legend .heat-cell:last-child {
+    margin-right: 4px;
+  }
+
+  .heat-year {
+    margin-bottom: 20px;
+  }
+  .heat-year-head {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .heat-row {
+    display: grid;
+    grid-template-columns: 30px repeat(31, 1fr) 24px;
+    align-items: center;
+    column-gap: 1px;
+    padding: 3px 0;
+    border-radius: 4px;
+  }
+  .heat-row.is-clickable {
+    cursor: pointer;
+  }
+  .heat-row.is-clickable:hover {
+    background: var(--hover-overlay);
+  }
+
+  .heat-month,
+  .heat-count {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .heat-count {
+    text-align: right;
+  }
+
+  .heat-cell {
+    display: block;
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: var(--heat-0);
+  }
+  .heat-cell.l1 { background: var(--heat-1); }
+  .heat-cell.l2 { background: var(--heat-2); }
+  .heat-cell.l3 { background: var(--heat-3); }
+  .heat-cell.l4 { background: var(--heat-4); }
+  .heat-cell.is-future { opacity: 0.35; }
+  .heat-cell.is-void { visibility: hidden; }
+  .heat-cell.is-today { box-shadow: 0 0 0 1px var(--text-secondary); }
