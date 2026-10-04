@@ -95,12 +95,15 @@ function buildRecentHtml(days, now) {
       daysWritten++;
       posts += list.length;
     }
-    // 左（14日前）から右（今日）へ順番にポコポコ落ちてくるディレイ（35ms刻み）
+    // 雨が降るように1つ1つ別々のタイミングでポコポコ落ちてくるディレイ（隣接する日が重ならないよう分散＋揺らぎ）
+    const rainDelays = [140, 320, 50, 240, 380, 20, 290, 100, 350, 180, 40, 270, 120, 210];
     const colIndex = RECENT_DAYS - 1 - i;
-    const delay = colIndex * 35;
+    const jitter = Math.floor(Math.random() * 40) - 20;
+    const delay = Math.max(10, rainDelays[colIndex] + jitter);
+    const duration = 460 + (colIndex % 4) * 25; // 460ms〜535msで雨粒ごとに落下速度に微妙な個性
     columns.push(`
       <button class="recent-day ${i === 0 ? "is-today" : ""}" ${list.length ? `onclick="openDay('${key}')"` : "disabled"} title="${t("heat_cell_title", monthDayFormat.format(date), list.length)}">
-        <span class="heat-day">${buildDayBarHtml(list.map((tw) => tw.mood), delay)}</span>
+        <span class="heat-day">${buildDayBarHtml(list.map((tw) => tw.mood), delay, duration)}</span>
         <span class="recent-date">${date.getDate()}</span>
         <span class="recent-week">${weekdayFormat.format(date)}</span>
       </button>
@@ -137,11 +140,14 @@ function buildMemoryCardHtml(days, now) {
 }
 
 // その日の棒：高さがポスト数、帯の色が1件ずつの気分（下から古い順）
-function buildDayBarHtml(moods, delayMs = null) {
+function buildDayBarHtml(moods, delayMs = null, durationMs = null) {
   if (!moods.length) return "";
   const height = (Math.min(moods.length, BAR_MAX_POSTS) / BAR_MAX_POSTS) * 100;
   const segments = moods.map((mood) => `<span class="${mood ? `m${mood}` : "no-mood"}"></span>`).join("");
-  const animStyle = delayMs !== null ? `style="height: ${height}%; animation-delay: ${delayMs}ms;"` : `style="height: ${height}%"`;
+  let animStyle = `style="height: ${height}%`;
+  if (delayMs !== null) animStyle += `; animation-delay: ${delayMs}ms`;
+  if (durationMs !== null) animStyle += `; animation-duration: ${durationMs}ms`;
+  animStyle += `"`;
   return `<span class="heat-bar ${moods.length > BAR_MAX_POSTS ? "is-dense" : ""}" ${animStyle}>${segments}</span>`;
 }
 
