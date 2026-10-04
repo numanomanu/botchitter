@@ -1,0 +1,98 @@
+/* =============================================================
+   botchitter — 検索バー・検索ハイライト (search.css)
+============================================================= */
+
+.search-bar {
+  display: none;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  animation: searchSlideDown 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.search-bar.show {
+  display: block;
+}
+
+@keyframes searchSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--quote-bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 10px;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.search-input-wrapper:focus-within {
+  border-color: var(--text-tertiary);
+  background: var(--card);
+}
+
+.search-input-icon {
+  width: 15px;
+  height: 15px;
+  stroke: var(--text-tertiary);
+  stroke-width: 1.8;
+  fill: none;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-primary);
+  padding: 0;
+  outline: none;
+}
+.search-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.btn-clear-search {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+  display: none;
+}
+.btn-clear-search.show {
+  display: inline-block;
+}
+.btn-clear-search:hover {
+  color: var(--text-primary);
+}
+
+.header-icon-btn.active {
+  color: var(--text-primary);
+  background: var(--hover-overlay);
+}
+
+/* 検索ハイライト */
+.search-highlight {
+  background: rgba(245, 158, 11, 0.28);
+  color: inherit;
+  border-radius: 3px;
+  padding: 1px 3px;
+  font-weight: 500;
+}
+[data-theme="dark"] .search-highlight {
+  background: rgba(251, 191, 36, 0.32);
+  color: #fff;
+}

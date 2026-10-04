@@ -324,6 +324,26 @@ function handleRouting() {
   pendingScroll = null;
 }
 
+let internalNavCount = 0;
+let isBackNavigating = false;
+window.addEventListener("hashchange", () => {
+  if (isBackNavigating) {
+    isBackNavigating = false;
+  } else {
+    internalNavCount++;
+  }
+});
+
+function handleBack() {
+  if (internalNavCount > 0 && window.history.length > 1) {
+    isBackNavigating = true;
+    internalNavCount = Math.max(0, internalNavCount - 1);
+    history.back();
+  } else {
+    goHome();
+  }
+}
+
 function goHome() {
   window.location.hash = "";
 }

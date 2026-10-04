@@ -1,0 +1,319 @@
+/* =============================================================
+   botchitter — 投稿・編集フォーム・気分・下書き (compose.css)
+============================================================= */
+
+.composer {
+  padding: 16px 0 14px;
+  margin-bottom: 4px;
+  position: relative;
+}
+
+textarea.composer-textarea {
+  width: 100%;
+  min-height: 64px;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 16px !important;
+  line-height: 1.75;
+  color: var(--text-primary);
+  resize: none;
+  padding: 0;
+  overflow-y: hidden;
+  field-sizing: content;
+}
+
+textarea.composer-textarea::placeholder {
+  color: var(--text-tertiary);
+  font-size: 16px;
+}
+
+/* 引用中の過去メモプレビュー */
+.quote-preview {
+  display: none;
+  position: relative;
+  background: var(--quote-bg);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 8px 0 12px;
+  border-left: 2px solid var(--text-secondary);
+  animation: slideDown 0.2s var(--ease-out);
+}
+.quote-preview.active {
+  display: block;
+}
+
+.quote-preview-header {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.quote-preview-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.quote-preview-icon {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+.btn-cancel-quote {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+.btn-cancel-quote:hover {
+  color: var(--text-primary);
+}
+
+.quote-preview-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.composer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.btn-post {
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border: none;
+  border-radius: 999px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.btn-post:disabled {
+  opacity: 0.15;
+  cursor: not-allowed;
+}
+.btn-post:not(:disabled):hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+/* 入力欄の #タグのハイライト */
+.highlight-field {
+  position: relative;
+}
+.highlight-field > textarea {
+  position: relative;
+  display: block;
+  width: 100%;
+  background: transparent;
+}
+.reply-input-box .highlight-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.highlight-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0 solid transparent;
+  color: transparent;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.tag-mark {
+  background: var(--tag-bg);
+  border-radius: 3px;
+  box-shadow: 0 0 0 2px var(--tag-bg);
+}
+
+/* タイムライン上の返信入力欄 */
+.reply-input-box {
+  display: none;
+  margin-top: 10px;
+  animation: slideDown 0.2s var(--ease-out);
+}
+.reply-input-box.open {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: var(--reply-bg);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 5px 8px 5px 14px;
+}
+
+.reply-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  outline: none;
+  resize: none;
+  min-height: 24px;
+  max-height: 120px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+.reply-input::placeholder {
+  color: var(--text-tertiary);
+  font-size: 16px;
+}
+
+.btn-submit-reply {
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border: none;
+  border-radius: 999px;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s, transform 0.1s;
+  box-sizing: border-box;
+  padding: 0;
+}
+.btn-submit-reply:hover {
+  opacity: 0.85;
+  transform: scale(1.05);
+}
+.btn-submit-reply svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  fill: none;
+}
+
+/* 気分（1 とても沈んでいる 〜 5 とても晴れやか） */
+.m1 { --mood-color: var(--mood-1); }
+.m2 { --mood-color: var(--mood-2); }
+.m3 { --mood-color: var(--mood-3); }
+.m4 { --mood-color: var(--mood-4); }
+.m5 { --mood-color: var(--mood-5); }
+
+/* 気分の選択：顔のボタン → 5つの顔（左が悲しい、右がニコちゃん） */
+.mood-control {
+  position: relative;
+}
+.mood-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 5px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+}
+.mood-trigger:hover {
+  color: var(--text-primary);
+  background: var(--hover-overlay);
+}
+.mood-trigger > svg:not(.face) {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mood-trigger.is-set {
+  padding: 4px;
+}
+
+.mood-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: -4px;
+  z-index: 25;
+  gap: 2px;
+  padding: 5px 6px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  animation: scaleIn 0.15s var(--ease-out);
+}
+.mood-control.open .mood-menu {
+  display: flex;
+}
+.mood-option {
+  width: 36px;
+  height: 36px;
+  padding: 4px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+.mood-option:hover {
+  transform: scale(1.12);
+}
+.mood-option.is-selected {
+  box-shadow: inset 0 0 0 2px var(--mood-color);
+}
+
+/* 顔（気分の色で塗った丸 ＋ 目と口） */
+.face {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.face .face-bg {
+  fill: var(--mood-color);
+}
+.face path {
+  fill: none;
+  stroke: rgba(20, 20, 19, 0.78);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.face .face-eyes {
+  stroke-width: 2.6;
+}
+
+/* 投稿の日付の横の小さな顔 */
+.mood-mark {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  margin-left: 6px;
+  vertical-align: -2px;
+}

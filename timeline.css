@@ -1,0 +1,414 @@
+/* =============================================================
+   botchitter — タイムライン・投稿カード・日付区切り (timeline.css)
+============================================================= */
+
+.view-timeline {
+  display: flex;
+  flex-direction: column;
+}
+.view-timeline.hidden {
+  display: none;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-left: 0;
+  contain: layout style;
+}
+
+.tweet-item {
+  position: relative;
+  padding: 16px 0 20px;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--line);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 130px;
+  contain: layout style;
+  scroll-margin-top: calc(64px + env(safe-area-inset-top, 0px));
+}
+.tweet-item.enter {
+  animation: fadeInTweet 0.25s var(--ease-out);
+}
+.tweet-item.is-target {
+  border-radius: 6px;
+  animation: targetFlash 1.6s ease-out;
+}
+@keyframes targetFlash {
+  from { background-color: var(--tag-bg); box-shadow: 0 0 0 10px var(--tag-bg); }
+  to { background-color: transparent; box-shadow: 0 0 0 10px transparent; }
+}
+.tweet-item.leaving {
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.tweet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+
+.tweet-date-link {
+  color: var(--text-tertiary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.tweet-date-link:hover {
+  color: var(--text-primary);
+}
+
+.tweet-content {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  cursor: pointer;
+}
+
+/* 引用リツイートカード */
+.quoted-card {
+  background: var(--quote-bg);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 6px 0 10px;
+  border-left: 2px solid var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.quoted-card:hover {
+  background: var(--quote-hover);
+  transform: translateY(-1px);
+}
+
+.quoted-card-header {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.quoted-card-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.quoted-card-date svg {
+  width: 11px;
+  height: 11px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+.quoted-card-comments-badge {
+  font-size: 10px;
+  background: var(--hover-overlay);
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.quoted-card-comments-badge svg {
+  width: 11px;
+  height: 11px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+}
+
+.quoted-card-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.tweet-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 6px;
+  border-radius: 999px;
+  transition: color 0.15s, background-color 0.15s;
+  min-width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+}
+.action-btn:hover {
+  color: var(--text-primary);
+  background: var(--hover-overlay);
+}
+.action-btn.delete-btn:hover {
+  color: var(--danger);
+}
+.action-btn svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  fill: none;
+}
+
+.action-count {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+}
+.action-count:empty {
+  display: none;
+}
+
+/* スレッド／コメント（インライン） */
+.replies-thread {
+  margin-top: 10px;
+  padding-left: 14px;
+  border-left: 1.5px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reply-item {
+  background: var(--reply-bg);
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 54px;
+  contain: layout style;
+}
+.reply-item.enter {
+  animation: fadeInTweet 0.2s var(--ease-out);
+}
+
+.reply-meta {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reply-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reply-action-btn {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.15s, background-color 0.15s;
+}
+.reply-action-btn:hover {
+  color: var(--text-primary);
+  background: var(--hover-overlay);
+}
+.reply-action-btn.delete-btn:hover {
+  color: var(--danger);
+}
+.reply-action-btn svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+}
+
+.reply-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* タグと絞り込みバー */
+.tag {
+  color: var(--tag);
+  cursor: pointer;
+}
+.tag:hover {
+  text-decoration: underline;
+}
+
+.tag-count {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.filter-bar {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.filter-bar.show {
+  display: flex;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--quote-bg);
+  border: none;
+  border-radius: 999px;
+  padding: 5px 10px 5px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.filter-chip.is-tag {
+  color: var(--tag);
+}
+.filter-chip:hover {
+  background: var(--quote-hover);
+}
+.filter-chip-x {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.tag-list {
+  display: none;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 16px 14px;
+  max-height: 40vh;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--line);
+}
+.tag-list.show {
+  display: flex;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--quote-bg);
+  border: none;
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--tag);
+  cursor: pointer;
+}
+.tag-chip:hover {
+  background: var(--quote-hover);
+}
+
+/* 検索結果 0 件の空状態 */
+.timeline-empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+.empty-state-text {
+  font-size: 14px;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+.btn-clear-empty {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-clear-empty:hover {
+  background: var(--hover-overlay);
+  border-color: var(--text-tertiary);
+}
+
+/* 日付境界線（デイ・ディバイダー） */
+.timeline-day-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 28px 0 16px;
+  user-select: none;
+}
+.timeline-day-divider:first-child {
+  margin-top: 10px;
+}
+.timeline-day-divider::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--line);
+  z-index: 1;
+}
+.timeline-day-divider span {
+  position: relative;
+  z-index: 2;
+  background: var(--bg);
+  padding: 2px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-tertiary);
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+
+/* 日付ラインの直前にある投稿の下のラインを消す */
+.tweet-item:has(+ .timeline-day-divider) {
+  border-bottom: none;
+}

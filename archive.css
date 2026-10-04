@@ -1,0 +1,262 @@
+/* =============================================================
+   botchitter — 振り返り・草・直近2週間アニメーション (archive.css)
+============================================================= */
+
+.view-archive {
+  display: none;
+  padding: 16px 0 24px;
+  animation: fadeInTweet 0.25s var(--ease-out);
+}
+.view-archive.active {
+  display: block;
+}
+
+.archive-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.tag-chip.is-active {
+  background: var(--tag-bg);
+  box-shadow: inset 0 0 0 1px var(--tag);
+}
+
+.heat-legend {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 3px;
+  margin-bottom: 8px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+.heat-swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--mood-color);
+}
+.heat-swatch.m1 {
+  margin-left: 4px;
+}
+.heat-swatch.m5 {
+  margin-right: 4px;
+}
+.heat-swatch.no-mood {
+  margin: 0 3px 0 8px;
+  background: var(--mood-none);
+}
+
+.archive-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 18px 0 8px;
+}
+.archive-section-head b {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.archive-section-head .heat-legend {
+  margin: 0;
+}
+.archive-summary {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 直近2週間：大きめの棒＋日付＋曜日 */
+.recent-strip {
+  display: grid;
+  grid-template-columns: repeat(14, 1fr);
+  gap: 2px;
+}
+.recent-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+.recent-day:disabled {
+  cursor: default;
+}
+.recent-day:not(:disabled):hover {
+  background: var(--hover-overlay);
+}
+.recent-day .heat-day {
+  width: 14px;
+  height: 52px;
+}
+
+/* 直近2週間：上からポコポコ降ってくる可愛いアニメーション */
+.recent-strip .heat-bar {
+  opacity: 0;
+  transform-origin: bottom center;
+  animation: dropPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes dropPop {
+  0% {
+    opacity: 0;
+    transform: translateY(-38px) scale(0.6, 1.35);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(3px) scale(1.18, 0.84);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-2px) scale(0.96, 1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1, 1);
+  }
+}
+
+.recent-date {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.recent-week {
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+.recent-day.is-today .recent-date,
+.recent-day.is-today .recent-week {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* 1年前（1か月前）の今日への入口 */
+.memory-card {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.memory-card:hover {
+  background: var(--hover-overlay);
+}
+.memory-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+.memory-text {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 年間ヒートマップ（これまで） */
+.heat-year {
+  margin-bottom: 20px;
+}
+.heat-year-head {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.heat-row {
+  display: grid;
+  grid-template-columns: 30px repeat(31, 1fr) 24px;
+  align-items: end;
+  column-gap: 1px;
+  padding: 4px 0;
+  border-radius: 4px;
+}
+.heat-row.is-clickable {
+  cursor: pointer;
+}
+.heat-row.is-clickable:hover {
+  background: var(--hover-overlay);
+}
+
+.heat-month,
+.heat-count {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.heat-count {
+  text-align: right;
+}
+.heat-month,
+.heat-count {
+  align-self: center;
+}
+
+/* 1日の棒：高さがポスト数、帯の色が1件ずつの気分（下から古い順） */
+.heat-day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 28px;
+}
+.heat-day:empty::before {
+  content: "";
+  height: 2px;
+  border-radius: 1px;
+  background: var(--heat-0);
+}
+.heat-day.is-future:empty::before {
+  opacity: 0.4;
+}
+.heat-day.is-void {
+  visibility: hidden;
+}
+.heat-day.is-today::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--text-secondary);
+}
+
+.heat-bar {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 1px;
+}
+.heat-bar.is-dense {
+  gap: 0;
+}
+.heat-bar > span {
+  flex: 1 1 0;
+  min-height: 1px;
+  border-radius: 1px;
+  background: var(--mood-color);
+}
+.heat-bar > .no-mood {
+  background: var(--mood-none);
+}
