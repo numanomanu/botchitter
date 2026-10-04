@@ -1581,9 +1581,12 @@ function buildRecentHtml(days, now) {
       daysWritten++;
       posts += list.length;
     }
+    // 左（14日前）から右（今日）へ順番にポコポコ落ちてくるディレイ（35ms刻み）
+    const colIndex = RECENT_DAYS - 1 - i;
+    const delay = colIndex * 35;
     columns.push(`
       <button class="recent-day ${i === 0 ? "is-today" : ""}" ${list.length ? `onclick="openDay('${key}')"` : "disabled"} title="${t("heat_cell_title", monthDayFormat.format(date), list.length)}">
-        <span class="heat-day">${buildDayBarHtml(list.map((tw) => tw.mood))}</span>
+        <span class="heat-day">${buildDayBarHtml(list.map((tw) => tw.mood), delay)}</span>
         <span class="recent-date">${date.getDate()}</span>
         <span class="recent-week">${weekdayFormat.format(date)}</span>
       </button>
@@ -1620,11 +1623,12 @@ function buildMemoryCardHtml(days, now) {
 }
 
 // その日の棒：高さがポスト数、帯の色が1件ずつの気分（下から古い順）
-function buildDayBarHtml(moods) {
+function buildDayBarHtml(moods, delayMs = null) {
   if (!moods.length) return "";
   const height = (Math.min(moods.length, BAR_MAX_POSTS) / BAR_MAX_POSTS) * 100;
   const segments = moods.map((mood) => `<span class="${mood ? `m${mood}` : "no-mood"}"></span>`).join("");
-  return `<span class="heat-bar ${moods.length > BAR_MAX_POSTS ? "is-dense" : ""}" style="height: ${height}%">${segments}</span>`;
+  const animStyle = delayMs !== null ? `style="height: ${height}%; animation-delay: ${delayMs}ms;"` : `style="height: ${height}%"`;
+  return `<span class="heat-bar ${moods.length > BAR_MAX_POSTS ? "is-dense" : ""}" ${animStyle}>${segments}</span>`;
 }
 
 function buildHeatYearHtml(year, days, now) {
