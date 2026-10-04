@@ -1239,10 +1239,11 @@ function buildPostActionsHtml(tweetId, inDetail = false) {
   `;
 }
 
-function buildTweetItemHtml(tweet) {
+function buildTweetItemHtml(tweet, noBorder = false) {
   const id = tweet.id;
+  const classes = ["tweet-item", enterClass(tweet.createdAt), noBorder ? "no-border-bottom" : ""].filter(Boolean).join(" ");
   return `
-    <article class="tweet-item ${enterClass(tweet.createdAt)}" id="${id}">
+    <article class="${classes}" id="${id}">
       <div class="tweet-header">
         <span class="tweet-date-link" onclick="goToTweet('${id}')">${formatTimestamp(tweet.createdAt)}${buildMoodMarkHtml(tweet)}${buildEditedMarkHtml(tweet)}</span>
       </div>
@@ -1326,7 +1327,8 @@ function renderTimeline() {
 
   let lastDay = null;
   const parts = [];
-  for (const tw of visible) {
+  for (let i = 0; i < visible.length; i++) {
+    const tw = visible[i];
     const twDate = new Date(tw.createdAt);
     const twDay = dayKey(twDate);
     if (twDay !== lastDay) {
@@ -1337,7 +1339,9 @@ function renderTimeline() {
         </div>
       `);
     }
-    parts.push(buildTweetItemHtml(tw));
+    const nextTw = visible[i + 1];
+    const isNextDayDifferent = nextTw && dayKey(new Date(nextTw.createdAt)) !== twDay;
+    parts.push(buildTweetItemHtml(tw, isNextDayDifferent));
   }
   timelineStream.innerHTML = parts.join("");
   updateFilterBar();

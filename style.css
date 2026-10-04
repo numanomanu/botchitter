@@ -270,8 +270,7 @@
 
   .composer {
     padding: 16px 0 14px;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     position: relative;
   }
 
@@ -1715,6 +1714,9 @@
     margin: 28px 0 16px;
     user-select: none;
   }
+  .timeline-day-divider:first-child {
+    margin-top: 10px;
+  }
   .timeline-day-divider::before {
     content: "";
     position: absolute;
@@ -1736,6 +1738,12 @@
     color: var(--text-tertiary);
     border-radius: 999px;
     border: 1px solid var(--line);
+  }
+
+  /* 日付ラインの直前にある投稿の下のラインを消す */
+  .tweet-item:has(+ .timeline-day-divider),
+  .tweet-item.no-border-bottom {
+    border-bottom: none;
   }
 
   /* 詳細画面の前後投稿ナビゲーション */
