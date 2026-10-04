@@ -143,16 +143,27 @@ function buildDayBarHtml(moods, dayBaseDelay = null) {
   if (!moods.length) return "";
   const height = (Math.min(moods.length, BAR_MAX_POSTS) / BAR_MAX_POSTS) * 100;
   const isAnimated = dayBaseDelay !== null;
-  // 1件ずつの投稿が下から順にポコポコ落ちて積み上がる
-  // 投稿数が多い日は少しピッチを詰めてリズミカルに（最大値へ向かってまとまる）
-  const stepDelay = moods.length > 5 ? Math.max(30, Math.floor(200 / moods.length)) : 65;
+  const animClasses = ["drop-a", "drop-b", "drop-c"];
+
+  let currentDelay = dayBaseDelay || 0;
+  const baseStep = moods.length > 5 ? Math.max(28, Math.floor(180 / moods.length)) : 60;
+
   const segments = moods.map((mood, idx) => {
-    let animStyle = "";
+    let animAttr = "";
     if (isAnimated) {
-      const itemDelay = dayBaseDelay + idx * stepDelay;
-      animStyle = ` style="animation-delay: ${itemDelay}ms;"`;
+      // 1件ごとに落下スタイル（高さ・傾き・揺れ）を不規則に変える
+      const animClass = animClasses[(idx + Math.floor(Math.random() * 3)) % 3];
+      // 落下速度（duration）も 400ms〜510ms でばらつかせる（揃って落ちないように）
+      const duration = 400 + Math.floor(Math.random() * 110);
+      animAttr = ` class="${animClass} ${mood ? `m${mood}` : "no-mood"}" style="animation-delay: ${currentDelay}ms; animation-duration: ${duration}ms;"`;
+
+      // 次のしずくまでの間隔にランダムな揺らぎ（±18ms）を加えて機械的な均一感をなくす
+      const stepJitter = Math.floor(Math.random() * 36) - 18;
+      currentDelay += Math.max(20, baseStep + stepJitter);
+    } else {
+      animAttr = ` class="${mood ? `m${mood}` : "no-mood"}"`;
     }
-    return `<span class="${mood ? `m${mood}` : "no-mood"}"${animStyle}></span>`;
+    return `<span${animAttr}></span>`;
   }).join("");
   return `<span class="heat-bar ${moods.length > BAR_MAX_POSTS ? "is-dense" : ""}" style="height: ${height}%">${segments}</span>`;
 }
