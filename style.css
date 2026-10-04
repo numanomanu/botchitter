@@ -1491,3 +1491,99 @@
     margin-left: 6px;
     vertical-align: -2px;
   }
+
+  /* 振り返りの見出し（直近2週間 / これまで） */
+  .archive-section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 18px 0 8px;
+  }
+  .archive-section-head b {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .archive-section-head .heat-legend {
+    margin: 0;
+  }
+  .archive-summary {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 直近2週間：大きめの棒＋日付＋曜日 */
+  .recent-strip {
+    display: grid;
+    grid-template-columns: repeat(14, 1fr);
+    gap: 2px;
+  }
+  .recent-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 0;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .recent-day:disabled {
+    cursor: default;
+  }
+  .recent-day:not(:disabled):hover {
+    background: var(--hover-overlay);
+  }
+  .recent-day .heat-day {
+    width: 14px;
+    height: 52px;
+  }
+  .recent-date {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+  }
+  .recent-week {
+    font-size: 10px;
+    color: var(--text-tertiary);
+  }
+  .recent-day.is-today .recent-date,
+  .recent-day.is-today .recent-week {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  /* 1年前（1か月前）の今日への入口 */
+  .memory-card {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: none;
+    font-family: inherit;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+  }
+  .memory-card:hover {
+    background: var(--hover-overlay);
+  }
+  .memory-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+  .memory-text {
+    display: block;
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }

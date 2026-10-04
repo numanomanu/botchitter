@@ -86,6 +86,12 @@ const I18N = {
     mood_high: "晴",
     mood_none: "なし",
     heat_cell_title: (date, n) => `${date} ${n}件`,
+    archive_recent: "直近2週間",
+    archive_recent_summary: (days, n) => `${days}日・${n}件`,
+    archive_past: "これまで",
+    memory_year: "1年前の今日",
+    memory_month: "1か月前の今日",
+    count_posts: (n) => `${n}件`,
     mood_label: (m) => ["とても沈んでいる", "すこし沈んでいる", "ふつう", "すこし晴れやか", "とても晴れやか"][m - 1]
   },
   en: {
@@ -113,6 +119,12 @@ const I18N = {
     mood_high: "High",
     mood_none: "None",
     heat_cell_title: (date, n) => `${date}: ${n}`,
+    archive_recent: "Last 2 weeks",
+    archive_recent_summary: (days, n) => `${days} days · ${n} posts`,
+    archive_past: "Over time",
+    memory_year: "A year ago today",
+    memory_month: "A month ago today",
+    count_posts: (n) => `${n} posts`,
     mood_label: (m) => ["Very low", "Low", "Neutral", "Good", "Great"][m - 1]
   }
 };
@@ -144,6 +156,7 @@ const headerDateFormat = new Intl.DateTimeFormat(DATE_LOCALE, { month: "short", 
 const monthDayFormat = new Intl.DateTimeFormat(DATE_LOCALE, { month: "short", day: "numeric" });
 const fullDateFormat = new Intl.DateTimeFormat(DATE_LOCALE, { year: "numeric", month: "short", day: "numeric" });
 const monthLabelFormat = new Intl.DateTimeFormat(DATE_LOCALE, { month: "short" });
+const weekdayFormat = new Intl.DateTimeFormat(DATE_LOCALE, { weekday: "narrow" });
 const yearMonthFormat = new Intl.DateTimeFormat(DATE_LOCALE, { year: "numeric", month: "long" });
 
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -1502,7 +1515,8 @@ function renderDetailView(tweetId) {
 
 // -------------------------------------------------------------
 // 振り返り（草）
-// GitHub の草を、スマホの幅に収まるよう「縦に月・横に日（1〜31）」に並べ替えて年ごとに出す。
+// 入口でいきなり1年分を見せると壮大すぎるので、上から「直近2週間」「1年前（1か月前）の今日」「これまで」の順に出す。
+// 「これまで」は GitHub の草を、スマホの幅に収まるよう「縦に月・横に日（1〜31）」に並べ替えて年ごとに出す。
 // 1日ごとに小さな棒を立て、高さがポスト数、帯の色が1件ずつの気分（下が朝・上が夜。平均しないので1日の浮き沈みも見える）。
 // タグを選ぶとそのタグのポストだけ。タップするとその月のタイムラインを、押した日の位置で開く
 // -------------------------------------------------------------
@@ -1515,6 +1529,9 @@ function openMonth(month, day = null) {
   pendingScroll = day ? `${month}-${day}` : "top";
   navigate({ month, tag: parseRoute().tag });
 }
+
+// "YYYY-MM-DD" の日を、その月のタイムラインのその日の位置で開く
+const openDay = (key) => openMonth(key.slice(0, 7), key.slice(8));
 
 // 月の行のタップ。マスは小さいので、押した位置に一番近い日を選ぶ（月名・件数のあたりなら月の先頭）
 function openHeatRow(event, month) {
@@ -1543,12 +1560,12 @@ function scrollToDay(key) {
 const BAR_MAX_POSTS = 6;
 
 function renderArchive(tag) {
-  const days = new Map(); // "YYYY-MM-DD" → その日のポストの気分の並び（古い順。未設定は null）
+  const days = new Map(); // "YYYY-MM-DD" → その日のポスト（古い順）
   for (const tweet of [...tweets].reverse()) {
     if (tag && !matchesTag(tweet, tag)) continue;
     const key = dayKey(new Date(tweet.createdAt));
     if (!days.has(key)) days.set(key, []);
-    days.get(key).push(tweet.mood);
+    days.get(key).push(tweet);
   }
 
   const now = new Date();
@@ -1565,12 +1582,69 @@ function renderArchive(tag) {
 
   archiveContent.innerHTML = `
     <div class="archive-tags">${chips}</div>
-    <div class="heat-legend">
-      ${t("mood_low")}${swatches}${t("mood_high")}
-      <span class="heat-swatch no-mood"></span>${t("mood_none")}
+    ${buildRecentHtml(days, now)}
+    <div class="archive-section-head">
+      <b>${t("archive_past")}</b>
+      <div class="heat-legend">
+        ${t("mood_low")}${swatches}${t("mood_high")}
+        <span class="heat-swatch no-mood"></span>${t("mood_none")}
+      </div>
     </div>
     ${years.join("")}
   `;
+}
+
+const RECENT_DAYS = 14;
+
+// 直近2週間：大きめの棒を、日付と曜日付きで横一列に。右肩は書いた日数と件数（事実だけ。連続記録などは出さない）
+function buildRecentHtml(days, now) {
+  let daysWritten = 0;
+  let posts = 0;
+  const columns = [];
+  for (let i = RECENT_DAYS - 1; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    const key = dayKey(date);
+    const list = days.get(key) || [];
+    if (list.length) {
+      daysWritten++;
+      posts += list.length;
+    }
+    columns.push(`
+      <button class="recent-day ${i === 0 ? "is-today" : ""}" ${list.length ? `onclick="openDay('${key}')"` : "disabled"} title="${t("heat_cell_title", monthDayFormat.format(date), list.length)}">
+        <span class="heat-day">${buildDayBarHtml(list.map((tw) => tw.mood))}</span>
+        <span class="recent-date">${date.getDate()}</span>
+        <span class="recent-week">${weekdayFormat.format(date)}</span>
+      </button>
+    `);
+  }
+  return `
+    <div class="archive-section-head">
+      <b>${t("archive_recent")}</b>
+      <span class="archive-summary">${t("archive_recent_summary", daysWritten, posts)}</span>
+    </div>
+    <div class="recent-strip">${columns.join("")}</div>
+    ${buildMemoryCardHtml(days, now)}
+  `;
+}
+
+// 1年前の今日（なければ1か月前の今日）に書いたものへの入口。その日の最初のポストの書き出しを添える
+function buildMemoryCardHtml(days, now) {
+  const candidates = [
+    [t("memory_year"), new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())],
+    [t("memory_month"), new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())]
+  ];
+  for (const [label, date] of candidates) {
+    if (date.getDate() !== now.getDate()) continue; // 前の月に同じ日がない（31日など）
+    const list = days.get(dayKey(date));
+    if (!list) continue;
+    return `
+      <button class="memory-card" onclick="openDay('${dayKey(date)}')">
+        <span class="memory-label">${label}・${t("count_posts", list.length)}</span>
+        <span class="memory-text">${escapeHtml(list[0].text)}</span>
+      </button>
+    `;
+  }
+  return "";
 }
 
 // その日の棒：高さがポスト数、帯の色が1件ずつの気分（下から古い順）
@@ -1596,7 +1670,7 @@ function buildHeatYearHtml(year, days, now) {
         continue;
       }
       const date = new Date(year, month, day);
-      const moods = days.get(dayKey(date)) || [];
+      const moods = (days.get(dayKey(date)) || []).map((tw) => tw.mood);
       monthTotal += moods.length;
       const classes = [date > now ? "is-future" : "", dayKey(date) === dayKey(now) ? "is-today" : ""].join(" ");
       cells.push(`<span class="heat-day ${classes}" data-day="${pad2(day)}" title="${t("heat_cell_title", monthDayFormat.format(date), moods.length)}">${buildDayBarHtml(moods)}</span>`);
