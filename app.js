@@ -570,6 +570,11 @@ function removeFilter(kind) {
 // 検索
 // -------------------------------------------------------------
 function toggleSearch() {
+  const route = parseRoute();
+  if (route.view !== "timeline") {
+    openSearch(true);
+    return;
+  }
   if (isSearchOpen) {
     closeSearch();
   } else {
@@ -579,11 +584,17 @@ function toggleSearch() {
 
 function openSearch(focus = true) {
   isSearchOpen = true;
+  const route = parseRoute();
+  if (route.view !== "timeline") {
+    navigate({ view: "timeline", tag: tagFilter, month: monthFilter, search: searchFilter });
+  }
   if (searchBar) searchBar.classList.add("show");
   if (btnSearch) btnSearch.classList.add("active");
   if (focus && searchInput) {
-    searchInput.focus();
-    searchInput.select();
+    setTimeout(() => {
+      searchInput.focus();
+      searchInput.select();
+    }, 10);
   }
 }
 
@@ -616,6 +627,22 @@ function handleSearchInput(val) {
       navigate({ tag: tagFilter, month: monthFilter, search: searchFilter });
     }
   }, 120);
+}
+
+function handleSearchKeydown(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    clearTimeout(searchInputTimer);
+    const q = (searchInput?.value || "").trim() || null;
+    if (q !== searchFilter) {
+      searchFilter = q;
+      navigate({ tag: tagFilter, month: monthFilter, search: searchFilter });
+    }
+    searchInput?.blur();
+  } else if (e.key === "Escape") {
+    e.preventDefault();
+    closeSearch();
+  }
 }
 
 function syncSearchUi() {
