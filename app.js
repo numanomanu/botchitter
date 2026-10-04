@@ -602,17 +602,33 @@ function closeSearch() {
   isSearchOpen = false;
   if (searchBar) searchBar.classList.remove("show");
   if (btnSearch) btnSearch.classList.remove("active");
-  if (searchFilter) {
-    clearSearch();
-  }
+  clearSearch();
 }
 
 function clearSearch() {
   if (searchInput) searchInput.value = "";
   if (btnClearSearch) btnClearSearch.classList.remove("show");
-  if (searchFilter) {
-    searchFilter = null;
-    navigate({ tag: tagFilter, month: monthFilter, search: null });
+  applySearch(null, true);
+}
+
+function applySearch(val, updateUrl = true) {
+  const q = (val || "").trim() || null;
+  if (q === searchFilter) {
+    syncSearchUi();
+    return;
+  }
+  searchFilter = q;
+  renderTimeline();
+  syncSearchUi();
+  if (updateUrl) {
+    const parts = [];
+    if (monthFilter) parts.push(`month-${monthFilter}`);
+    if (tagFilter) parts.push(`tag-${encodeURIComponent(tagFilter)}`);
+    if (searchFilter) parts.push(`q-${encodeURIComponent(searchFilter)}`);
+    const newHash = parts.length ? `#${parts.join("&")}` : "#";
+    if (window.location.hash !== newHash) {
+      history.replaceState(null, "", newHash);
+    }
   }
 }
 
@@ -625,7 +641,7 @@ function handleSearchCompositionStart() {
 
 function handleSearchCompositionEnd() {
   isSearchComposing = false;
-  handleSearchInput(searchInput.value);
+  applySearch(searchInput?.value, true);
 }
 
 function handleSearchInput(val) {
@@ -633,12 +649,8 @@ function handleSearchInput(val) {
   if (isSearchComposing) return;
   clearTimeout(searchInputTimer);
   searchInputTimer = setTimeout(() => {
-    const q = val.trim() || null;
-    if (q !== searchFilter) {
-      searchFilter = q;
-      navigate({ tag: tagFilter, month: monthFilter, search: searchFilter });
-    }
-  }, 120);
+    applySearch(val, true);
+  }, 100);
 }
 
 function handleSearchKeydown(e) {
@@ -646,11 +658,7 @@ function handleSearchKeydown(e) {
     if (e.isComposing || e.keyCode === 229 || isSearchComposing) return;
     e.preventDefault();
     clearTimeout(searchInputTimer);
-    const q = (searchInput?.value || "").trim() || null;
-    if (q !== searchFilter) {
-      searchFilter = q;
-      navigate({ tag: tagFilter, month: monthFilter, search: searchFilter });
-    }
+    applySearch(searchInput?.value, true);
     searchInput?.blur();
   } else if (e.key === "Escape") {
     e.preventDefault();
