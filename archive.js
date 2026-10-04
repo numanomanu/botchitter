@@ -95,11 +95,11 @@ function buildRecentHtml(days, now) {
       daysWritten++;
       posts += list.length;
     }
-    // 雨が降るように各日の起点タイミングを分散（隣接する日が重ならないよう分散＋揺らぎ）
-    const rainDelays = [140, 320, 50, 240, 380, 20, 290, 100, 350, 180, 40, 270, 120, 210];
+    // 雨が降るように各日の起点タイミングを大きく分散（全体で約1.5秒にわたって順次降り始める）
+    const rainDelays = [180, 820, 90, 1350, 420, 50, 1050, 280, 1480, 620, 140, 950, 340, 710];
     const colIndex = RECENT_DAYS - 1 - i;
-    const jitter = Math.floor(Math.random() * 40) - 20;
-    const dayBaseDelay = Math.max(10, rainDelays[colIndex] + jitter);
+    const jitter = Math.floor(Math.random() * 80) - 40;
+    const dayBaseDelay = Math.max(20, rainDelays[colIndex] + jitter);
     columns.push(`
       <button class="recent-day ${i === 0 ? "is-today" : ""}" ${list.length ? `onclick="openDay('${key}')"` : "disabled"} title="${t("heat_cell_title", monthDayFormat.format(date), list.length)}">
         <span class="heat-day">${buildDayBarHtml(list.map((tw) => tw.mood), dayBaseDelay)}</span>
@@ -146,20 +146,21 @@ function buildDayBarHtml(moods, dayBaseDelay = null) {
   const animClasses = ["drop-a", "drop-b", "drop-c"];
 
   let currentDelay = dayBaseDelay || 0;
-  const baseStep = moods.length > 5 ? Math.max(28, Math.floor(180 / moods.length)) : 60;
+  // 日の中のしずくの間隔もゆったり（投稿が多い日は適度に詰める）
+  const baseStep = moods.length > 5 ? Math.max(50, Math.floor(320 / moods.length)) : 105;
 
   const segments = moods.map((mood, idx) => {
     let animAttr = "";
     if (isAnimated) {
       // 1件ごとに落下スタイル（高さ・傾き・揺れ）を不規則に変える
       const animClass = animClasses[(idx + Math.floor(Math.random() * 3)) % 3];
-      // 落下速度（duration）も 400ms〜510ms でばらつかせる（揃って落ちないように）
-      const duration = 400 + Math.floor(Math.random() * 110);
+      // 落下速度（duration）を 600ms〜750ms とゆったりにして、落下やバウンドを目で追えるように
+      const duration = 600 + Math.floor(Math.random() * 150);
       animAttr = ` class="${animClass} ${mood ? `m${mood}` : "no-mood"}" style="animation-delay: ${currentDelay}ms; animation-duration: ${duration}ms;"`;
 
-      // 次のしずくまでの間隔にランダムな揺らぎ（±18ms）を加えて機械的な均一感をなくす
-      const stepJitter = Math.floor(Math.random() * 36) - 18;
-      currentDelay += Math.max(20, baseStep + stepJitter);
+      // 次のしずくまでの間隔にランダムな揺らぎ（±25ms）
+      const stepJitter = Math.floor(Math.random() * 50) - 25;
+      currentDelay += Math.max(35, baseStep + stepJitter);
     } else {
       animAttr = ` class="${mood ? `m${mood}` : "no-mood"}"`;
     }
