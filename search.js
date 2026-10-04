@@ -82,14 +82,6 @@ function syncSearchUi() {
   btnClearSearch.classList.toggle("show", !!searchInput.value);
 }
 
-// ランダムに過去の1投稿を開く（偶然の再会）
-function openRandomTweet() {
-  if (!tweets || tweets.length === 0) return;
-  closeMenu();
-  const randomTweet = tweets[Math.floor(Math.random() * tweets.length)];
-  goToTweet(randomTweet.id);
-}
-
 // 投稿が検索語に一致するか（本文・引用・コメント・リンク）
 function matchesSearch(tweet, q) {
   if (!q) return true;

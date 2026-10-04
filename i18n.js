@@ -29,9 +29,10 @@ const I18N = {
     yesterday: "昨日",
     edited: "編集済み",
     menu_archive: "振り返る",
-    menu_random: "過去の点と再会する",
-    menu_export: "バックアップを書き出す",
-    menu_import: "バックアップを読み込む",
+    menu_theme: "テーマ",
+    menu_backup: "バックアップ",
+    btn_export: "書き出し",
+    btn_import: "読み込み",
     install_hint: "ホーム画面に追加すると、記録が消えにくくなります",
     toast_copied: "コピーしました",
     toast_imported: (n) => `${n}件を読み込みました`,
@@ -69,9 +70,10 @@ const I18N = {
     yesterday: "Yesterday",
     edited: "Edited",
     menu_archive: "Look back",
-    menu_random: "Meet a past moment",
-    menu_export: "Export backup",
-    menu_import: "Import backup",
+    menu_theme: "Theme",
+    menu_backup: "Backup",
+    btn_export: "Export",
+    btn_import: "Import",
     install_hint: "Add to Home Screen so your notes don't get cleared",
     toast_copied: "Copied",
     toast_imported: (n) => `Imported ${n}`,
@@ -112,10 +114,11 @@ function applyTranslations() {
   if ($("btnConfirmCancel")) $("btnConfirmCancel").textContent = t("btn_cancel");
   if ($("btnConfirmDelete")) $("btnConfirmDelete").textContent = t("btn_delete");
   if ($("btnArchive")) $("btnArchive").textContent = t("menu_archive");
-  if ($("btnRandom")) $("btnRandom").textContent = t("menu_random");
+  if ($("labelTheme")) $("labelTheme").textContent = t("menu_theme");
+  if ($("labelBackup")) $("labelBackup").textContent = t("menu_backup");
   if ($("todayDateLabel")) $("todayDateLabel").title = t("menu_archive");
-  if ($("btnExport")) $("btnExport").textContent = t("menu_export");
-  if ($("btnImport")) $("btnImport").textContent = t("menu_import");
+  if ($("btnExport")) $("btnExport").textContent = t("btn_export");
+  if ($("btnImport")) $("btnImport").textContent = t("btn_import");
   if ($("installHintText")) $("installHintText").textContent = t("install_hint");
   if ($("searchInput")) $("searchInput").placeholder = t("search_placeholder");
 }

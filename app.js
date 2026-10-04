@@ -58,7 +58,6 @@ const filterBar = $("filterBar");
 const viewArchive = $("viewArchive");
 const archiveContent = $("archiveContent");
 const tagList = $("tagList");
-const btnRandom = $("btnRandom");
 
 // -------------------------------------------------------------
 // データ参照ヘルパー
@@ -153,20 +152,26 @@ function currentTheme() {
 function initTheme() {
   const saved = localStorage.getItem(THEME_KEY);
   if (saved) document.documentElement.dataset.theme = saved;
-  updateThemeMenuItem();
-  darkQuery.addEventListener("change", updateThemeMenuItem);
+  updateThemeUI();
+  darkQuery.addEventListener("change", updateThemeUI);
+}
+
+function setTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem(THEME_KEY, theme);
+  updateThemeUI();
 }
 
 function toggleTheme() {
-  const next = currentTheme() === "dark" ? "light" : "dark";
-  document.documentElement.dataset.theme = next;
-  localStorage.setItem(THEME_KEY, next);
-  updateThemeMenuItem();
-  closeMenu();
+  setTheme(currentTheme() === "dark" ? "light" : "dark");
 }
 
-function updateThemeMenuItem() {
-  $("btnTheme").textContent = t(currentTheme() === "dark" ? "theme_to_light" : "theme_to_dark");
+function updateThemeUI() {
+  const theme = currentTheme();
+  const lightBtn = $("btnThemeLight");
+  const darkBtn = $("btnThemeDark");
+  if (lightBtn) lightBtn.classList.toggle("is-active", theme === "light");
+  if (darkBtn) darkBtn.classList.toggle("is-active", theme === "dark");
 }
 
 // -------------------------------------------------------------

@@ -393,7 +393,7 @@ header {
   display: flex;
 }
 
-/* メニュー（バックアップ等） */
+/* メニュー（テーマ・バックアップ等） */
 .menu-dialog {
   padding: 6px 0;
   overflow: hidden;
@@ -408,14 +408,84 @@ header {
   font-size: 14px;
   text-align: left;
   color: var(--text-primary);
-  padding: 14px 22px;
+  padding: 13px 20px;
   cursor: pointer;
+}
+button.menu-item:hover {
+  background: var(--hover-overlay);
 }
 .menu-item + .menu-item {
   border-top: 1px solid var(--line);
 }
-.menu-item:hover {
-  background: var(--hover-overlay);
+
+.menu-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: default;
+}
+
+.menu-item-label {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+/* テーマ切り替え（太陽・月） */
+.segmented-control {
+  display: inline-flex;
+  align-items: center;
+  background: var(--quote-bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px;
+  gap: 2px;
+}
+.segmented-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.15s var(--ease-out);
+}
+.segmented-btn:hover {
+  color: var(--text-primary);
+}
+.segmented-btn.is-active {
+  background: var(--card);
+  color: var(--text-primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* バックアップ（書き出し・読み込み） */
+.menu-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.menu-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--quote-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.menu-action-btn:hover {
+  background: var(--quote-hover);
+  border-color: var(--text-tertiary);
 }
 
 .visually-hidden {
