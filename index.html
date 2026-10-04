@@ -34,7 +34,6 @@
 
     <div class="header-right">
       <button class="header-date" id="todayDateLabel" onclick="openArchive()"></button>
-      <button class="header-icon-btn" id="themeToggleBtn" onclick="toggleTheme()"></button>
       <button class="header-icon-btn" onclick="openMenu()" aria-label="Menu">
         <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
       </button>
@@ -79,8 +78,8 @@
       </div>
 
       <div class="composer-bottom">
-        <!-- 気分（任意。色の丸5つ。app.js が描く） -->
-        <div class="mood-picker" id="composerMood"></div>
+        <!-- 気分（任意。顔のボタン → 5つの顔。app.js が描く） -->
+        <div id="composerMoodSlot"></div>
         <button id="postBtn" class="btn-post" disabled onclick="publishTweet()"></button>
       </div>
     </section>
@@ -111,11 +110,12 @@
     </div>
   </div>
 
-  <!-- メニュー（タグ一覧・振り返り・バックアップの書き出し／読み込み） -->
+  <!-- メニュー（タグ一覧・振り返り・テーマ・バックアップの書き出し／読み込み） -->
   <div class="confirm-overlay" id="menuOverlay" onclick="closeMenu()">
     <div class="confirm-dialog menu-dialog" onclick="event.stopPropagation()">
       <div class="tag-list" id="tagList"></div>
       <button class="menu-item" id="btnArchive" onclick="openArchive()"></button>
+      <button class="menu-item" id="btnTheme" onclick="toggleTheme()"></button>
       <button class="menu-item" id="btnExport" onclick="exportData()"></button>
       <label class="menu-item" id="btnImport" for="importInput"></label>
       <input type="file" id="importInput" class="visually-hidden" accept=".json,application/json" onchange="importData(this)" />

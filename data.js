@@ -18,14 +18,14 @@ const SEED_TEXT = {
     past: "自分自身が振り返るための記録。 #はじめに",
     reply: "過去の呟きにコメントを重ねたり、引用して思考を繋げられます。",
     replyTag: "#はじめに のようにタグを付けておくと、タップで同じタグの投稿だけを見返せます。",
-    replyMood: "残すときに入力欄の色の丸を選ぶと、そのときの気分も残せます。上の日付をタップすると、量や気分を草で振り返れます。"
+    replyMood: "残すときに入力欄の顔のマークを押すと、そのときの気分も残せます。上の日付をタップすると、量や気分を草で振り返れます。"
   },
   en: {
     today: "A private timeline for your thoughts, seen by no one else.\n\nEverything is saved locally on this device.\n\n(Only when you actively tap the share button, you can post to any SNS of your choice.)",
     past: "A personal space to reflect over time. #welcome",
     reply: "Add comments or quote past notes to follow how your thoughts evolve.",
     replyTag: "Add a tag like #welcome, then tap it to see only the posts with that tag.",
-    replyMood: "Pick a colored dot when posting to record how you felt. Tap the date at the top to look back at your posts and moods."
+    replyMood: "Tap the face icon when posting to record how you felt. Tap the date at the top to look back at your posts and moods."
   }
 };
 

@@ -1080,7 +1080,7 @@
     gap: 8px;
     margin-top: 8px;
   }
-  .edit-actions .mood-picker {
+  .edit-actions .mood-control {
     margin-right: auto;
   }
 
@@ -1371,49 +1371,100 @@
     background: var(--mood-none);
   }
 
-  /* 色の丸。押しやすいようボタンは 24px、見える丸は 14px */
-  .mood-picker {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-  }
-  .mood-dot {
+  /* 気分の選択：顔のボタン → 5つの顔（左が悲しい、右がニコちゃん） */
+  .mood-control {
     position: relative;
-    width: 24px;
-    height: 24px;
-    padding: 0;
+  }
+  .mood-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 5px;
     border: none;
-    background: none;
-    cursor: pointer;
-  }
-  .mood-dot::after {
-    content: "";
-    position: absolute;
-    inset: 5px;
     border-radius: 50%;
-    background: var(--mood-color);
-    opacity: 0.45;
-    transition: opacity 0.15s, transform 0.15s;
+    background: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: color 0.15s, background-color 0.15s;
   }
-  .mood-dot:hover::after {
-    opacity: 0.9;
+  .mood-trigger:hover {
+    color: var(--text-primary);
+    background: var(--hover-overlay);
   }
-  .mood-picker.has-selection .mood-dot::after {
-    opacity: 0.2;
+  .mood-trigger > svg:not(.face) {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
-  .mood-picker .mood-dot.is-selected::after {
-    opacity: 1;
-    transform: scale(1.15);
-    box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--mood-color);
+  .mood-trigger.is-set {
+    padding: 4px;
   }
 
-  /* 投稿の日付の横の小さな丸 */
+  .mood-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: -4px;
+    z-index: 25;
+    gap: 2px;
+    padding: 5px 6px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+    animation: scaleIn 0.15s var(--ease-out);
+  }
+  .mood-control.open .mood-menu {
+    display: flex;
+  }
+  .mood-option {
+    width: 36px;
+    height: 36px;
+    padding: 4px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+    transition: transform 0.12s;
+  }
+  .mood-option:hover {
+    transform: scale(1.12);
+  }
+  .mood-option.is-selected {
+    box-shadow: inset 0 0 0 2px var(--mood-color);
+  }
+
+  /* 顔（気分の色で塗った丸 ＋ 目と口） */
+  .face {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .face .face-bg {
+    fill: var(--mood-color);
+  }
+  .face path {
+    fill: none;
+    stroke: rgba(20, 20, 19, 0.78);
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .face .face-eyes {
+    stroke-width: 2.6;
+  }
+
+  /* 投稿の日付の横の小さな顔 */
   .mood-mark {
     display: inline-block;
-    width: 7px;
-    height: 7px;
+    width: 13px;
+    height: 13px;
     margin-left: 6px;
-    border-radius: 50%;
-    background: var(--mood-color);
-    vertical-align: 1px;
+    vertical-align: -2px;
   }

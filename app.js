@@ -38,7 +38,6 @@ const detailContent = $("detailContent");
 const viewTimeline = $("viewTimeline");
 const viewDetail = $("viewDetail");
 const btnBack = $("btnBack");
-const themeToggleBtn = $("themeToggleBtn");
 const confirmOverlay = $("confirmOverlay");
 const menuOverlay = $("menuOverlay");
 const installHint = $("installHint");
@@ -54,8 +53,7 @@ const ICONS = {
   trash: `<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
   edit: `<svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`,
   send: `<svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`,
-  sun: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
-  moon: `<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`
+  moodAdd: `<svg viewBox="0 0 24 24"><path d="M22 11v1a10 10 0 1 1-9-10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/><path d="M16 5h6M19 2v6"/></svg>`
 };
 
 // -------------------------------------------------------------
@@ -81,8 +79,9 @@ const I18N = {
     toast_copied: "コピーしました",
     toast_imported: (n) => `${n}件を読み込みました`,
     toast_import_failed: "読み込めませんでした",
-    theme_light_title: "ライトモード",
-    theme_dark_title: "ダークモード",
+    theme_to_light: "ライトモードにする",
+    theme_to_dark: "ダークモードにする",
+    mood_add: "気分を付ける",
     archive_all: "すべて",
     archive_mode_count: "量",
     archive_mode_mood: "気分",
@@ -111,8 +110,9 @@ const I18N = {
     toast_copied: "Copied",
     toast_imported: (n) => `Imported ${n}`,
     toast_import_failed: "Couldn't import this file",
-    theme_light_title: "Light mode",
-    theme_dark_title: "Dark mode",
+    theme_to_light: "Switch to light mode",
+    theme_to_dark: "Switch to dark mode",
+    mood_add: "Add mood",
     archive_all: "All",
     archive_mode_count: "Posts",
     archive_mode_mood: "Mood",
@@ -196,21 +196,21 @@ function currentTheme() {
 function initTheme() {
   const saved = localStorage.getItem(THEME_KEY);
   if (saved) document.documentElement.dataset.theme = saved;
-  updateThemeButton();
-  darkQuery.addEventListener("change", updateThemeButton);
+  updateThemeMenuItem();
+  darkQuery.addEventListener("change", updateThemeMenuItem);
 }
 
+// メニューの「ダークモードにする / ライトモードにする」
 function toggleTheme() {
   const next = currentTheme() === "dark" ? "light" : "dark";
   document.documentElement.dataset.theme = next;
   localStorage.setItem(THEME_KEY, next);
-  updateThemeButton();
+  updateThemeMenuItem();
+  closeMenu();
 }
 
-function updateThemeButton() {
-  const isDark = currentTheme() === "dark";
-  themeToggleBtn.innerHTML = isDark ? ICONS.sun : ICONS.moon;
-  themeToggleBtn.title = t(isDark ? "theme_light_title" : "theme_dark_title");
+function updateThemeMenuItem() {
+  $("btnTheme").textContent = t(currentTheme() === "dark" ? "theme_to_light" : "theme_to_dark");
 }
 
 // -------------------------------------------------------------
@@ -973,6 +973,7 @@ function runConfirm() {
 
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
+    closeMoodMenus();
     closeConfirm();
     closeMenu();
     cancelEdit();
@@ -1013,22 +1014,53 @@ async function shareItem(tweetId, replyId) {
 }
 
 // -------------------------------------------------------------
-// 気分（1 とても沈んでいる 〜 5 とても晴れやか）。色の丸5つで選び、もう一度押すと外れる
+// 気分（1 とても沈んでいる 〜 5 とても晴れやか）。
+// 顔のボタンを押すと5つの顔（左が悲しい、右がニコちゃん）が出る。選んだ顔をもう一度押すと外れる
 // -------------------------------------------------------------
 const isMood = (v) => Number.isInteger(v) && v >= 1 && v <= 5;
 
-function moodPickerInnerHtml(selected, onPick) {
-  return [1, 2, 3, 4, 5].map((m) => `
-    <button class="mood-dot m${m} ${selected === m ? "is-selected" : ""}" onclick="${onPick}(${m})" aria-label="${t("mood_label", m)}" title="${t("mood_label", m)}"></button>
-  `).join("");
+// 顔は「気分の色で塗った丸 ＋ 目と口」
+const FACE_FEATURES = {
+  1: `<path class="face-eyes" d="M9 10h.01M15 10h.01"/><path d="M8 16.8c1-1.6 2.4-2.4 4-2.4s3 .8 4 2.4"/>`,
+  2: `<path class="face-eyes" d="M9 10h.01M15 10h.01"/><path d="M8.6 16c.9-.9 2-1.3 3.4-1.3s2.5.4 3.4 1.3"/>`,
+  3: `<path class="face-eyes" d="M9 10h.01M15 10h.01"/><path d="M8.6 15h6.8"/>`,
+  4: `<path class="face-eyes" d="M9 10h.01M15 10h.01"/><path d="M8.6 14c.9.9 2 1.4 3.4 1.4s2.5-.5 3.4-1.4"/>`,
+  5: `<path d="M7.8 10.2c.7-1 1.7-1 2.4 0M13.8 10.2c.7-1 1.7-1 2.4 0"/><path d="M7.6 13.4c1 1.9 2.5 2.9 4.4 2.9s3.4-1 4.4-2.9"/>`
+};
+const faceSvg = (mood) => `<svg viewBox="0 0 24 24" class="face"><circle class="face-bg" cx="12" cy="12" r="10"/>${FACE_FEATURES[mood]}</svg>`;
+
+function moodControlHtml(id, selected, onPick) {
+  const label = isMood(selected) ? t("mood_label", selected) : t("mood_add");
+  return `
+    <div class="mood-control" id="${id}">
+      <button class="mood-trigger ${isMood(selected) ? `m${selected} is-set` : ""}" onclick="toggleMoodMenu('${id}')" aria-label="${label}" title="${label}">
+        ${isMood(selected) ? faceSvg(selected) : ICONS.moodAdd}
+      </button>
+      <div class="mood-menu">
+        ${[1, 2, 3, 4, 5].map((m) => `
+          <button class="mood-option m${m} ${selected === m ? "is-selected" : ""}" onclick="${onPick}(${m})" aria-label="${t("mood_label", m)}" title="${t("mood_label", m)}">${faceSvg(m)}</button>
+        `).join("")}
+      </div>
+    </div>
+  `;
 }
 
-function renderMoodPicker(el, selected, onPick) {
-  el.innerHTML = moodPickerInnerHtml(selected, onPick);
-  el.classList.toggle("has-selection", isMood(selected));
+function toggleMoodMenu(id) {
+  const willOpen = !$(id).classList.contains("open");
+  closeMoodMenus();
+  $(id).classList.toggle("open", willOpen);
 }
 
-const renderComposerMood = () => renderMoodPicker($("composerMood"), composerMood, "pickComposerMood");
+const closeMoodMenus = () => document.querySelectorAll(".mood-control.open").forEach((el) => el.classList.remove("open"));
+
+// 顔の選択肢の外を押したら閉じる
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".mood-control")) closeMoodMenus();
+});
+
+const renderComposerMood = () => {
+  $("composerMoodSlot").innerHTML = moodControlHtml("composerMood", composerMood, "pickComposerMood");
+};
 
 function pickComposerMood(mood) {
   composerMood = composerMood === mood ? null : mood;
@@ -1038,11 +1070,11 @@ function pickComposerMood(mood) {
 
 function pickEditMood(mood) {
   editingTarget.mood = editingTarget.mood === mood ? null : mood;
-  renderMoodPicker($("editMood"), editingTarget.mood, "pickEditMood");
+  $("editMood").outerHTML = moodControlHtml("editMood", editingTarget.mood, "pickEditMood");
 }
 
 const buildMoodMarkHtml = (tweet) =>
-  tweet.mood ? `<span class="mood-mark m${tweet.mood}" title="${t("mood_label", tweet.mood)}"></span>` : "";
+  tweet.mood ? `<span class="mood-mark m${tweet.mood}" title="${t("mood_label", tweet.mood)}">${faceSvg(tweet.mood)}</span>` : "";
 
 // -------------------------------------------------------------
 // タグとリンク（本文中の #株 など。文字や数字の直後（今日は#株）と URL 中の # は除く。数字だけのものも除く）
@@ -1246,9 +1278,7 @@ function buildEditBoxHtml() {
         >${escapeHtml(editingTarget.text)}</textarea>
       </div>
       <div class="edit-actions">
-        ${editingTarget.replyId ? "" : `
-          <div class="mood-picker ${isMood(editingTarget.mood) ? "has-selection" : ""}" id="editMood">${moodPickerInnerHtml(editingTarget.mood, "pickEditMood")}</div>
-        `}
+        ${editingTarget.replyId ? "" : moodControlHtml("editMood", editingTarget.mood, "pickEditMood")}
         <button class="btn-confirm-cancel" onclick="cancelEdit()">${t("btn_cancel")}</button>
         <button id="editSaveBtn" class="btn-post" onclick="saveEdit()">${t("btn_save")}</button>
       </div>
