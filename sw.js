@@ -4,7 +4,7 @@
 // そのためファイルを更新してもバージョン番号やクエリ文字列を上げる必要はない。
 // =============================================================
 
-const CACHE_NAME = "botchitter-cache-v24";
+const CACHE_NAME = "botchitter-cache-v25";
 const ASSETS = [
   "./",
   "index.html",
@@ -47,6 +47,10 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+
+  const url = new URL(event.request.url);
+  // API エンドポイントは SW でキャッシュせず直接ネットワークへ（Vercel Edge キャッシュを活用）
+  if (url.pathname.startsWith("/api/")) return;
 
   event.respondWith(
     fetch(event.request, { cache: "no-cache" })

@@ -1,9 +1,12 @@
 // =============================================================
 // botchitter — リンクのタイトル取得 API（Vercel Function）
 //
-// URL を含む投稿をした時に、アプリから1回だけ POST { url } で呼ばれる。
+// URL を含む投稿をした時に、アプリから GET /api/ogp?url=... で呼ばれる。
 // 返すのは { title, siteName, image } だけ。本文や端末のデータは受け取らない。
-// 誰でも呼べてしまうので、取得先を http/https の公開アドレスに限り、時間・サイズ・リダイレクト回数に上限を設ける。
+// セキュリティ & コスト対策:
+// 1. 本番ドメイン（botchitter.vercel.app）からのみ受付（外部の踏み台・無断利用を403で拒否）
+// 2. Vercel エッジキャッシュ（s-maxage）により、同一URLの再取得をCDNで即時返却（Function実行回数を激減）
+// 3. SSRF対策: 内部・プライベートIP宛て拒否、時間・サイズ・リダイレクト制限
 // =============================================================
 
 const dns = require("node:dns").promises;
@@ -15,14 +18,56 @@ const MAX_REDIRECTS = 3;
 const USER_AGENT = "Mozilla/5.0 (compatible; botchitter-link-preview/1.0)";
 
 module.exports = async (req, res) => {
-  if (req.method !== "POST") return res.status(405).end();
+  if (req.method !== "GET" && req.method !== "POST") return res.status(405).end();
+
+  // ドメイン制限: botchitter.vercel.app 以外からのリクエストは拒否 (localhost含む外部アクセスを403)
+  if (!isAllowedRequest(req)) {
+    return res.status(403).json({ error: "forbidden" });
+  }
+
+  const rawUrl = req.method === "GET"
+    ? (req.query?.url || new URL(req.url, "http://localhost").searchParams.get("url"))
+    : req.body?.url;
+
+  if (!rawUrl || typeof rawUrl !== "string") {
+    return res.status(400).json({ error: "missing url" });
+  }
+
   try {
-    const page = await fetchPage(req.body?.url);
-    res.status(200).json(extractMeta(page.html, page.url));
+    const page = await fetchPage(rawUrl);
+    const meta = extractMeta(page.html, page.url);
+
+    // Vercel Edge キャッシュ: 24時間CDNキャッシュ、裏で非同期更新 (stale-while-revalidate)
+    res.setHeader("Cache-Control", "public, s-maxage=86400, stale-while-revalidate=604800");
+
+    res.status(200).json(meta);
   } catch (err) {
     res.status(422).json({ error: "unavailable" });
   }
 };
+
+function isAllowedRequest(req) {
+  // 1. モダンブラウザの Same-Origin リクエスト
+  if (req.headers["sec-fetch-site"] === "same-origin") {
+    return true;
+  }
+
+  // 2. Origin または Referer が botchitter.vercel.app であること
+  const isTargetDomain = (val) => {
+    if (!val) return false;
+    try {
+      const u = new URL(val);
+      return u.hostname === "botchitter.vercel.app" || /^botchitter(-.*)?\.vercel\.app$/.test(u.hostname);
+    } catch {
+      return false;
+    }
+  };
+
+  if (req.headers.origin && isTargetDomain(req.headers.origin)) return true;
+  if (req.headers.referer && isTargetDomain(req.headers.referer)) return true;
+
+  return false;
+}
 
 // リダイレクトは自分でたどり、行き先ごとに内部ネットワークでないことを確かめる
 async function fetchPage(rawUrl) {

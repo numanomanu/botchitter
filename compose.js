@@ -568,10 +568,9 @@ async function attachLinkPreview(tweetId, replyId = null) {
 
 async function fetchLinkPreview(url) {
   try {
-    const res = await fetch("api/ogp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url })
+    const res = await fetch(`api/ogp?url=${encodeURIComponent(url)}`, {
+      method: "GET",
+      headers: { Accept: "application/json" }
     });
     if (!res.ok) return null;
     const data = await res.json();
