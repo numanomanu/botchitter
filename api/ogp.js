@@ -10,12 +10,31 @@
 // =============================================================
 
 const dns = require("node:dns").promises;
+const dnsCallback = require("node:dns");
 const net = require("node:net");
+const { Agent } = require("undici");
 
 const TIMEOUT_MS = 5000;
 const MAX_BYTES = 2 * 1024 * 1024; // OGP は <head> にあるので </head> まで読めば足りる（YouTube は 700KB 付近）
 const MAX_REDIRECTS = 3;
 const USER_AGENT = "Mozilla/5.0 (compatible; botchitter-link-preview/1.0)";
+
+// DNS Rebinding / TOCTOU 対策: 接続直前の名前解決コールバックでも private IP を遮断する
+const secureDispatcher = new Agent({
+  connect: {
+    lookup: (hostname, opts, cb) => {
+      if (typeof opts === "function") { cb = opts; opts = {}; }
+      dnsCallback.lookup(hostname, opts, (err, address, family) => {
+        if (err) return cb(err);
+        const addrs = Array.isArray(address) ? address : [{ address, family }];
+        if (addrs.some((a) => !a.address || isPrivateAddress(a.address))) {
+          return cb(new Error("private address blocked"));
+        }
+        cb(null, address, family);
+      });
+    }
+  }
+});
 
 module.exports = async (req, res) => {
   if (req.method !== "GET" && req.method !== "POST") return res.status(405).end();
@@ -84,6 +103,7 @@ async function fetchPage(rawUrl) {
     const res = await fetch(url, {
       redirect: "manual",
       signal,
+      dispatcher: secureDispatcher,
       headers: { "User-Agent": USER_AGENT, Accept: "text/html,application/xhtml+xml" }
     });
     const location = res.headers.get("location");
