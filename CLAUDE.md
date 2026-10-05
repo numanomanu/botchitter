@@ -1,6 +1,7 @@
 # botchitter
 
-一人用のつぶやき PWA。ビルドなし・依存なしの素の HTML/CSS/JS。データは端末内の IndexedDB だけに置く。
+一人用のつぶやき PWA。ビルドなしの素の HTML/CSS/JS。データは端末内の IndexedDB だけに置く。
+外部ライブラリは端末間の同期で使う QR の生成・読み取りの2つだけ（`vendor/` に同梱、同期画面を開いたときだけ読み込む）。
 サーバー側は、リンクのタイトルを取る `api/ogp.js`（Vercel Function、CommonJS）だけ。
 データ構造は `app.js` 冒頭のコメントを参照。
 
@@ -21,6 +22,8 @@
 - `timeline.js`: タイムライン表示・カードHTML生成・日付区切り・部分更新（refresh）
 - `detail.js`: 詳細画面・コメントスレッド・前後投稿ナビゲーション
 - `archive.js`: 振り返り（草）・年間/月間ヒートマップ・直近2週間のポコポコアニメーション
+- `sync.css` / `sync.js`: 端末間の同期（前回送ってからの変更を QR で送る・アプリ内カメラで受け取る）
+- `vendor/`: `qrcode.js`（QR 生成、MIT）・`jsQR.js`（QR 読み取り、Apache-2.0）。手を加えずそのまま置く
 - `sw.js`: Service Worker（オフライン用キャッシュ）
 - `api/ogp.js`: リンクの OGP タイトル取得 API
 
@@ -34,6 +37,10 @@
 - タグで絞り込み中は入力欄の先頭にそのタグを自動で入れる（`applyAutoTag()`）。手つかずなら解除時に外し、下書きにも残さない
 - リンクのタイトル（`link`）は投稿・編集した時に1回だけ `attachLinkPreview()` で取って保存する。表示のたびに外へ通信しない（画像も出さない）
 - `api/ogp.js` は誰でも呼べるので、内部ネットワーク宛ての拒否・時間・サイズ・リダイレクト回数の制限を外さない
+- ポスト・コメントを変えたら `updatedAt` も更新する（作成・本文の編集・気分の変更）。同期で新しい方を選ぶのに使う
+- 削除したら `recordDeletion(id)` を呼ぶ。消した ID は次に送れたら捨てる（中身は残さない）
+- 読み込み・同期は `mergeTweets(incoming, deletedIds)` で混ぜる。項目ごとに `updatedAt` が新しい方を採用し、負けた方の文は `history` に残す。こちらで消して未送信のものは戻さない
+- 同期の QR は1枚 200 バイト・誤り訂正 L（`SYNC_CHUNK_BYTES` / `SYNC_QR_ECC`）。増やすとカメラで読めなくなる（ぼけ・傾き・縮小を混ぜた試験で確認済み）
 - 編集は詳細画面からだけ。上書きせず、前の版を `history` に残す（過去の思考を消さないため）
 - ユーザーが入力した文字列は `escapeHtml()` を通す。ID は onclick 属性に埋め込むので、外から来るデータは `normalizeTweets()` を通す（`isValidId` で弾く）
 - 保存キー（`data.js` の `DB_NAME` / `STORE_NAME` / `STORAGE_KEY`）は変えない。変えると既存ユーザーのデータが読めなくなる。形式を変えるときは `normalizeTweets()` で旧形式から移行する

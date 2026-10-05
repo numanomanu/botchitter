@@ -119,10 +119,14 @@ function normalizeEntry(item) {
   const history = (Array.isArray(item.history) ? item.history : [])
     .filter((v) => typeof v?.text === "string" && Number.isFinite(v.createdAt))
     .map((v) => ({ text: v.text, createdAt: v.createdAt }));
+  const createdAt = toTimestamp(item);
+  const editedAt = Number.isFinite(item.editedAt) ? item.editedAt : null;
   return {
     id: item.id,
-    createdAt: toTimestamp(item),
-    editedAt: Number.isFinite(item.editedAt) ? item.editedAt : null,
+    createdAt,
+    editedAt,
+    // 最後に変えた時刻（同期で新しい方を選ぶ）。旧形式には無いので作成・編集の新しい方で補う
+    updatedAt: Number.isFinite(item.updatedAt) ? item.updatedAt : Math.max(createdAt, editedAt || 0),
     text: item.text,
     history,
     link: normalizeLink(item.link)
@@ -154,25 +158,74 @@ function normalizeTweets(raw) {
   return list.sort((a, b) => b.createdAt - a.createdAt);
 }
 
-// ID 単位で足し合わせる（既存の投稿は上書きしない）。追加した件数を返す
-function mergeTweets(incoming) {
-  let added = 0;
+// 読み込み・同期で受け取ったポストを混ぜる。変わった件数を返す
+//   ・ポスト・コメントごとに updatedAt が新しい方を採用する（負けた方の文は編集履歴に残し、消さない）
+//   ・deletedIds（相手が前回送ってから消したもの）は消す
+//   ・こちらで消してまだ送っていないもの（loadSyncState().deleted）は、相手から来ても戻さない
+function mergeTweets(incoming, deletedIds = []) {
+  const deletedHere = new Set(loadSyncState().deleted);
+  let changed = 0;
   for (const tw of incoming) {
+    if (deletedHere.has(tw.id)) continue;
     const existing = findTweet(tw.id);
     if (!existing) {
+      tw.replies = tw.replies.filter((rep) => !deletedHere.has(rep.id));
       tweets.push(tw);
-      added += 1 + tw.replies.length;
+      changed += 1 + tw.replies.length;
       continue;
     }
+    if (mergeEntry(existing, tw)) changed++;
     for (const rep of tw.replies) {
-      if (existing.replies.some((r) => r.id === rep.id)) continue;
-      existing.replies.push(rep);
-      added++;
+      if (deletedHere.has(rep.id)) continue;
+      const local = existing.replies.find((r) => r.id === rep.id);
+      if (!local) {
+        existing.replies.push(rep);
+        changed++;
+      } else if (mergeEntry(local, rep)) {
+        changed++;
+      }
     }
     existing.replies.sort((a, b) => a.createdAt - b.createdAt);
   }
+
+  const toDelete = new Set(deletedIds);
+  const before = tweets.length;
+  tweets = tweets.filter((tw) => !toDelete.has(tw.id));
+  changed += before - tweets.length;
+  for (const tw of tweets) {
+    const count = tw.replies.length;
+    tw.replies = tw.replies.filter((rep) => !toDelete.has(rep.id));
+    changed += count - tw.replies.length;
+  }
+
   tweets.sort((a, b) => b.createdAt - a.createdAt);
-  return added;
+  return changed;
+}
+
+// 同じポスト（コメント）を混ぜる。両方の履歴を合わせ、新しい方の内容にする。手元が変わったら true
+function mergeEntry(local, incoming) {
+  const history = [...local.history];
+  for (const v of incoming.history) {
+    if (!history.some((h) => h.createdAt === v.createdAt && h.text === v.text)) history.push(v);
+  }
+  const incomingWins = incoming.updatedAt > local.updatedAt;
+  const [winner, loser] = incomingWins ? [incoming, local] : [local, incoming];
+  // 両方の端末で別々に編集していた場合、負けた方の文を履歴に残す
+  if (loser.text !== winner.text && !history.some((h) => h.text === loser.text)) {
+    history.push({ text: loser.text, createdAt: loser.editedAt || loser.createdAt });
+  }
+  history.sort((a, b) => a.createdAt - b.createdAt);
+  const changed = incomingWins || history.length !== local.history.length;
+
+  local.history = history;
+  if (incomingWins) {
+    local.text = incoming.text;
+    local.editedAt = incoming.editedAt;
+    local.updatedAt = incoming.updatedAt;
+    local.link = incoming.link ?? (local.link?.url === findFirstUrl(incoming.text) ? local.link : null);
+    if ("mood" in incoming) local.mood = incoming.mood;
+  }
+  return changed;
 }
 
 // -------------------------------------------------------------

@@ -380,6 +380,7 @@ function publishTweet() {
     id: `tw-${now}`,
     createdAt: now,
     editedAt: null,
+    updatedAt: now,
     text,
     history: [],
     link: null,
@@ -463,7 +464,7 @@ function addReply(tweetId, inputId = `reply-input-${tweetId}`) {
   if (!tweet || !text) return;
 
   const now = Date.now();
-  tweet.replies.push({ id: `rep-${now}`, createdAt: now, editedAt: null, text, history: [], link: null });
+  tweet.replies.push({ id: `rep-${now}`, createdAt: now, editedAt: null, updatedAt: now, text, history: [], link: null });
   save();
   try {
     localStorage.removeItem(REPLY_DRAFT_PREFIX + tweetId);
@@ -478,6 +479,7 @@ function addReply(tweetId, inputId = `reply-input-${tweetId}`) {
 // -------------------------------------------------------------
 function deleteItem(tweetId, replyId) {
   askConfirmation(() => {
+    recordDeletion(replyId || tweetId); // 次に別の端末へ送るときに一緒に伝える
     if (replyId) {
       const tweet = findTweet(tweetId);
       if (!tweet) return;
@@ -527,18 +529,22 @@ function saveEdit() {
   if (!item || !text) return;
 
   editingTarget = null;
+  const now = Date.now();
   let changed = false;
   if (text !== item.text) {
     item.history.push({ text: item.text, createdAt: item.editedAt || item.createdAt });
     item.text = text;
-    item.editedAt = Date.now();
+    item.editedAt = now;
     changed = true;
   }
   if (!replyId && mood !== item.mood) {
     item.mood = mood;
     changed = true;
   }
-  if (changed) save();
+  if (changed) {
+    item.updatedAt = now;
+    save();
+  }
   refresh(tweetId);
   attachLinkPreview(tweetId, replyId);
 }

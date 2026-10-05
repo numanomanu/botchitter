@@ -10,6 +10,7 @@ const THEME_KEY = "botchitter_theme_mode";
 const INSTALL_HINT_KEY = "botchitter_install_hint_dismissed";
 const DRAFT_KEY = "botchitter_composer_draft";
 const REPLY_DRAFT_PREFIX = "botchitter_reply_draft_";
+const SYNC_STATE_KEY = "botchitter_sync_state"; // 端末間の同期：前回送った時刻と、それから消した ID
 
 // 初めて訪れた人が鬱陶しく感じない、静かでシンプルなコンセプト説明
 const SEED_TEXT = {

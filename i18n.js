@@ -31,6 +31,23 @@ const I18N = {
     menu_archive: "振り返る",
     menu_theme: "テーマ",
     menu_backup: "バックアップ",
+    menu_sync: "端末間の同期",
+    btn_sync_send: "送る",
+    btn_sync_receive: "受け取る",
+    btn_close: "閉じる",
+    sync_send_hint: "もう一方の端末の「受け取る」で、この QR を読み取ってください",
+    sync_summary: (posts, deleted) => `${posts}件${deleted ? `・削除 ${deleted}件` : ""}`,
+    sync_done: "送れた",
+    sync_send_all: "すべて送る",
+    sync_nothing: "前回送ってから、変わったものはありません",
+    sync_scan_hint: "もう一方の端末の QR をかざしてください",
+    sync_scan_progress: (got, total) => `${got} / ${total} 枚 読み取りました`,
+    sync_camera_failed: "カメラを使えませんでした",
+    sync_failed: "うまく取り込めませんでした。もう一度試してください",
+    sync_too_large: "多すぎて QR で送れません。バックアップの書き出しを使ってください",
+    sync_unsupported: "このブラウザは同期に対応していません",
+    toast_synced: (n) => `${n}件を同期しました`,
+    toast_sync_sent: "送信済みにしました",
     btn_export: "書き出し",
     btn_import: "読み込み",
     install_hint: "ホーム画面に追加すると、記録が消えにくくなります",
@@ -73,6 +90,23 @@ const I18N = {
     menu_archive: "Look back",
     menu_theme: "Theme",
     menu_backup: "Backup",
+    menu_sync: "Sync devices",
+    btn_sync_send: "Send",
+    btn_sync_receive: "Receive",
+    btn_close: "Close",
+    sync_send_hint: "Scan this QR code with “Receive” on the other device",
+    sync_summary: (posts, deleted) => `${posts} posts${deleted ? ` · ${deleted} deleted` : ""}`,
+    sync_done: "Done",
+    sync_send_all: "Send everything",
+    sync_nothing: "Nothing has changed since you last sent",
+    sync_scan_hint: "Point the camera at the QR code on the other device",
+    sync_scan_progress: (got, total) => `Read ${got} of ${total}`,
+    sync_camera_failed: "Couldn't use the camera",
+    sync_failed: "Couldn't import it. Please try again",
+    sync_too_large: "Too much to send by QR. Use backup export instead",
+    sync_unsupported: "This browser doesn't support syncing",
+    toast_synced: (n) => `Synced ${n} changes`,
+    toast_sync_sent: "Marked as sent",
     btn_export: "Export",
     btn_import: "Import",
     install_hint: "Add to Home Screen so your notes don't get cleared",
@@ -119,6 +153,9 @@ function applyTranslations() {
   if ($("btnArchive")) $("btnArchive").textContent = t("menu_archive");
   if ($("labelTheme")) $("labelTheme").textContent = t("menu_theme");
   if ($("labelBackup")) $("labelBackup").textContent = t("menu_backup");
+  if ($("labelSync")) $("labelSync").textContent = t("menu_sync");
+  if ($("btnSyncSend")) $("btnSyncSend").textContent = t("btn_sync_send");
+  if ($("btnSyncReceive")) $("btnSyncReceive").textContent = t("btn_sync_receive");
   if ($("todayDateLabel")) $("todayDateLabel").title = t("menu_archive");
   if ($("btnExport")) $("btnExport").textContent = t("btn_export");
   if ($("btnImport")) $("btnImport").textContent = t("btn_import");

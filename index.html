@@ -53,6 +53,7 @@
   <link rel="stylesheet" href="detail.css" />
   <link rel="stylesheet" href="search.css" />
   <link rel="stylesheet" href="archive.css" />
+  <link rel="stylesheet" href="sync.css" />
 </head>
 
 <body>
@@ -204,6 +205,14 @@
       </div>
 
       <div class="menu-item menu-row">
+        <span class="menu-item-label" id="labelSync"></span>
+        <div class="menu-action-group">
+          <button class="menu-action-btn" id="btnSyncSend" onclick="openSyncSend()"></button>
+          <button class="menu-action-btn" id="btnSyncReceive" onclick="openSyncReceive()"></button>
+        </div>
+      </div>
+
+      <div class="menu-item menu-row">
         <span class="menu-item-label" id="labelBackup"></span>
         <div class="menu-action-group">
           <button class="menu-action-btn" id="btnExport" onclick="exportData()"></button>
@@ -212,6 +221,11 @@
       </div>
       <input type="file" id="importInput" class="visually-hidden" accept=".json,application/json" onchange="importData(this)" />
     </div>
+  </div>
+
+  <!-- 端末間の同期（QR で送る・受け取る。中身は sync.js が描く） -->
+  <div class="confirm-overlay" id="syncOverlay" onclick="closeSync()">
+    <div class="confirm-dialog sync-dialog" id="syncContent" onclick="event.stopPropagation()"></div>
   </div>
 
   <!-- トースト通知 -->
@@ -227,6 +241,7 @@
 <script src="timeline.js"></script>
 <script src="detail.js"></script>
 <script src="archive.js"></script>
+<script src="sync.js"></script>
 <script src="app.js"></script>
 
 </body>

@@ -6,13 +6,14 @@
 //   id:             "tw-" + タイムスタンプ
 //   createdAt:      ミリ秒数値
 //   editedAt:       ミリ秒数値 | null
+//   updatedAt:      ミリ秒数値（最後に変えた時刻。端末間の同期で新しい方を選ぶ。変えたら必ず更新する）
 //   text:           本文文字列
 //   history:        [{ text, createdAt }, ...]（編集前の版）
 //   link:           { url, title, siteName, image } | null
 //   mood:           1〜5 | null（1:とても沈んでいる 〜 5:とても晴れやか）
 //   targetQuoteId:  引用元の tweetId | null
 //   quoted:         { createdAt, text } | null（引用元が消えても残るようテキストを複製）
-//   replies:        [{ id: "rep-" + タイムスタンプ, createdAt, editedAt, text, history, link }, ...]
+//   replies:        [{ id: "rep-" + タイムスタンプ, createdAt, editedAt, updatedAt, text, history, link }, ...]
 // =============================================================
 
 // -------------------------------------------------------------
@@ -390,6 +391,7 @@ window.addEventListener("keydown", (e) => {
     closeMoodMenus();
     closeConfirm();
     closeMenu();
+    closeSync();
     cancelEdit();
     return;
   }
