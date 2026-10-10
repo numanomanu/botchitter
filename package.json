@@ -1,8 +1,0 @@
-{
-  "name": "botchitter",
-  "private": true,
-  "description": "api/ogp.js（Vercel Function）が使う undici だけを入れる。アプリ本体（素の HTML/CSS/JS）はビルドしない",
-  "dependencies": {
-    "undici": "7.30.0"
-  }
-}

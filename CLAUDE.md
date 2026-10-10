@@ -2,7 +2,6 @@
 
 一人用のつぶやき PWA。ビルドなしの素の HTML/CSS/JS。データは端末内の IndexedDB だけに置く。
 外部ライブラリは端末間の同期で使う QR の生成・読み取りの2つだけ（`vendor/` に同梱、同期画面を開いたときだけ読み込む）。
-サーバー側（`api/ogp.js`）だけ npm の `undici` を使う（`package.json`。入れないと Vercel で起動できない）。アプリ本体はビルドしない。
 サーバー側は、リンクのタイトルを取る `api/ogp.js`（Vercel Function、CommonJS）だけ。
 データ構造は `app.js` 冒頭のコメントを参照。
 

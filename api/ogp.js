@@ -3,6 +3,7 @@
 //
 // URL を含む投稿をした時に、アプリから GET /api/ogp?url=... で呼ばれる。
 // 返すのは { title, siteName, image } だけ。本文や端末のデータは受け取らない。
+// npm のライブラリは使わない（Node 標準の http / https / dns / zlib だけ）。
 // セキュリティ & コスト対策:
 // 1. 同一ドメイン（Same-Origin）からのみ受付（外部の踏み台・無断利用を403で拒否。フォーク先でも無設定で動作）
 // 2. Vercel エッジキャッシュ（s-maxage）により、同一URLの再取得をCDNで即時返却（Function実行回数を激減）
@@ -12,29 +13,33 @@
 const dns = require("node:dns").promises;
 const dnsCallback = require("node:dns");
 const net = require("node:net");
-const { Agent } = require("undici");
+const http = require("node:http");
+const https = require("node:https");
+const zlib = require("node:zlib");
+const { pipeline } = require("node:stream");
 
 const TIMEOUT_MS = 5000;
 const MAX_BYTES = 2 * 1024 * 1024; // OGP は <head> にあるので </head> まで読めば足りる（YouTube は 700KB 付近）
 const MAX_REDIRECTS = 3;
 const USER_AGENT = "Mozilla/5.0 (compatible; botchitter-link-preview/1.0)";
 
-// DNS Rebinding / TOCTOU 対策: 接続直前の名前解決コールバックでも private IP を遮断する
-const secureDispatcher = new Agent({
-  connect: {
-    lookup: (hostname, opts, cb) => {
-      if (typeof opts === "function") { cb = opts; opts = {}; }
-      dnsCallback.lookup(hostname, opts, (err, address, family) => {
-        if (err) return cb(err);
-        const addrs = Array.isArray(address) ? address : [{ address, family }];
-        if (addrs.some((a) => !a.address || isPrivateAddress(a.address))) {
-          return cb(new Error("private address blocked"));
-        }
-        cb(null, address, family);
-      });
-    }
+// DNS Rebinding / TOCTOU 対策: 接続する直前の名前解決でも private IP を遮断する。
+// http(s).request の lookup に渡すと、ここで確かめたアドレスにそのままつなぐ
+// （IP アドレスを直接書いた URL はここを通らないので、assertPublicUrl() で確かめている）
+function secureLookup(hostname, options, callback) {
+  if (typeof options === "function") {
+    callback = options;
+    options = {};
   }
-});
+  dnsCallback.lookup(hostname, options, (err, address, family) => {
+    if (err) return callback(err);
+    const addrs = Array.isArray(address) ? address : [{ address, family }];
+    if (!addrs.length || addrs.some((a) => !a.address || isPrivateAddress(a.address))) {
+      return callback(new Error("private address blocked"));
+    }
+    callback(null, address, family);
+  });
+}
 
 module.exports = async (req, res) => {
   if (req.method !== "GET" && req.method !== "POST") return res.status(405).end();
@@ -97,26 +102,55 @@ function isAllowedRequest(req) {
 
 // リダイレクトは自分でたどり、行き先ごとに内部ネットワークでないことを確かめる
 async function fetchPage(rawUrl) {
-  const signal = AbortSignal.timeout(TIMEOUT_MS);
+  const signal = AbortSignal.timeout(TIMEOUT_MS); // リダイレクトも含めて、全体でこの時間まで
   let url = await assertPublicUrl(rawUrl);
   for (let i = 0; i <= MAX_REDIRECTS; i++) {
-    const res = await fetch(url, {
-      redirect: "manual",
-      signal,
-      dispatcher: secureDispatcher,
-      headers: { "User-Agent": USER_AGENT, Accept: "text/html,application/xhtml+xml" }
-    });
-    const location = res.headers.get("location");
-    if (res.status >= 300 && res.status < 400 && location) {
-      url = await assertPublicUrl(new URL(location, url).href);
-      continue;
+    const res = await request(url, signal);
+    try {
+      const status = res.statusCode;
+      const location = res.headers.location;
+      if (status >= 300 && status < 400 && location) {
+        url = await assertPublicUrl(new URL(location, url).href);
+        continue;
+      }
+      const contentType = res.headers["content-type"] || "";
+      if (status < 200 || status >= 300 || !contentType.includes("html")) throw new Error("not an html page");
+      const bytes = await readHead(decodedBody(res), MAX_BYTES);
+      return { url: url.href, html: decodeHtml(bytes, contentType) };
+    } finally {
+      res.destroy(); // 読み終えた・途中でやめた接続は閉じる
     }
-    const contentType = res.headers.get("content-type") || "";
-    if (!res.ok || !contentType.includes("html")) throw new Error("not an html page");
-    const bytes = await readHead(res.body, MAX_BYTES);
-    return { url: url.href, html: decodeHtml(bytes, contentType) };
   }
   throw new Error("too many redirects");
+}
+
+// 1回分の GET。応答のヘッダーが届いたら返す（本文はまだ読まない）
+function request(url, signal) {
+  return new Promise((resolve, reject) => {
+    const client = url.protocol === "https:" ? https : http;
+    const req = client.request(url, {
+      method: "GET",
+      lookup: secureLookup,
+      signal,
+      headers: {
+        "User-Agent": USER_AGENT,
+        Accept: "text/html,application/xhtml+xml",
+        "Accept-Encoding": "gzip, deflate, br"
+      }
+    }, resolve);
+    req.on("error", reject);
+    req.end();
+  });
+}
+
+// 圧縮されていれば展開しながら読む（展開後の大きさは readHead() が MAX_BYTES で止める）
+function decodedBody(res) {
+  const encoding = (res.headers["content-encoding"] || "").trim().toLowerCase();
+  const decoder = encoding === "gzip" || encoding === "x-gzip" ? zlib.createGunzip()
+    : encoding === "deflate" ? zlib.createInflate()
+    : encoding === "br" ? zlib.createBrotliDecompress()
+    : null;
+  return decoder ? pipeline(res, decoder, () => {}) : res;
 }
 
 async function assertPublicUrl(rawUrl) {
