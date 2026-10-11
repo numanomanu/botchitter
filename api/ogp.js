@@ -163,22 +163,23 @@ async function assertPublicUrl(rawUrl) {
   return url;
 }
 
-// localhost・プライベート・リンクローカル・CGNAT・マルチキャストなど、公開されていないアドレス
+// localhost・プライベート・リンクローカル・CGNAT・マルチキャストなど、公開されていないアドレス。
+// IPv4 を中に埋め込む IPv6 のうち ::ffff:（IPv4 射影）は中の IPv4 で判定し、
+// ほかの埋め込み（::a.b.c.d・NAT64・6to4・Teredo）は中身にかかわらず弾く。書き方の違い（省略・16進）は BlockList が吸収する
+const PRIVATE_RANGES = new net.BlockList();
+for (const [address, prefix] of [
+  ["0.0.0.0", 8], ["10.0.0.0", 8], ["100.64.0.0", 10], ["127.0.0.0", 8], ["169.254.0.0", 16],
+  ["172.16.0.0", 12], ["192.0.0.0", 24], ["192.168.0.0", 16], ["198.18.0.0", 15], ["224.0.0.0", 3]
+]) PRIVATE_RANGES.addSubnet(address, prefix, "ipv4");
+for (const [address, prefix] of [
+  ["::", 96], ["::ffff:0:0:0", 96], ["64:ff9b::", 96], ["64:ff9b:1::", 48], ["100::", 64],
+  ["2001::", 32], ["2002::", 16], ["fc00::", 7], ["fe80::", 10], ["fec0::", 10], ["ff00::", 8]
+]) PRIVATE_RANGES.addSubnet(address, prefix, "ipv6");
+
 function isPrivateAddress(ip) {
-  if (net.isIPv4(ip)) {
-    const [a, b] = ip.split(".").map(Number);
-    return a === 0 || a === 10 || a === 127 || a >= 224
-      || (a === 100 && b >= 64 && b <= 127)
-      || (a === 169 && b === 254)
-      || (a === 172 && b >= 16 && b <= 31)
-      || (a === 192 && b === 168);
-  }
-  const v6 = ip.toLowerCase();
-  if (v6.startsWith("::ffff:")) {
-    const v4 = v6.slice("::ffff:".length);
-    return net.isIPv4(v4) ? isPrivateAddress(v4) : true;
-  }
-  return v6 === "::" || v6 === "::1" || /^f[cd]/.test(v6) || /^fe[89ab]/.test(v6);
+  const family = net.isIP(ip);
+  if (!family) return true;
+  return PRIVATE_RANGES.check(ip, family === 4 ? "ipv4" : "ipv6");
 }
 
 // </head> が来るか limit バイトに達したところで読むのをやめる
